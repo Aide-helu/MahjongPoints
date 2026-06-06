@@ -3,17 +3,98 @@
         xmlns:vm="using:MahjongPoints.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="640"
         x:Class="MahjongPoints.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="MahjongPoints">
+        Title="MahjongPoints"
+        Width="1000"
+        Height="640"
+        MinWidth="860"
+        MinHeight="560">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Grid RowDefinitions="Auto,*" Margin="16" RowSpacing="12">
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="SelectImageButton"
+                        Click="SelectImageButton_OnClick"
+                        Padding="16,8"
+                        Content="选择图片"/>
+                <TextBlock Text="{Binding SelectedFileName}"
+                           VerticalAlignment="Center"
+                           Foreground="#444"/>
+            </StackPanel>
 
+            <TextBlock Text="{Binding StatusMessage}"
+                       VerticalAlignment="Center"
+                       TextAlignment="Right"
+                       TextWrapping="Wrap"
+                       Foreground="#555"/>
+        </DockPanel>
+
+        <Grid Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="16">
+            <Border BorderBrush="#D0D5DD"
+                    BorderThickness="1"
+                    Background="#F7F8FA"
+                    CornerRadius="4"
+                    Padding="8">
+                <Image Source="{Binding PreviewImage}"
+                       Stretch="Uniform"/>
+            </Border>
+
+            <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="10">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="识别结果"
+                               FontSize="20"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding RecognitionSummary}"
+                               Foreground="#555"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding SelectedImagePath}"
+                               Foreground="#667085"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1">
+                    <ItemsControl ItemsSource="{Binding RecognizedTiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="94"
+                                        Margin="0,0,8,8"
+                                        Padding="10"
+                                        BorderBrush="#D0D5DD"
+                                        BorderThickness="1"
+                                        Background="White"
+                                        CornerRadius="4">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Code}"
+                                                   FontSize="12"
+                                                   Foreground="#667085"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ConfidenceText}"
+                                                   FontSize="12"
+                                                   Foreground="#027A48"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
 </Window>
