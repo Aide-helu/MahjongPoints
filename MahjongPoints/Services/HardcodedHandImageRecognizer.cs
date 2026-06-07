@@ -5,12 +5,12 @@ using MahjongPoints.Models;
 namespace MahjongPoints.Services;
 
 /// <summary>
-/// 演示用手牌图片识别服务，始终返回固定的 13 张手牌。
+/// 演示用手牌图片识别服务，始终返回固定的 14 张胡牌状态手牌。
 /// </summary>
 public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
 {
     /// <summary>
-    /// 演示识别结果中固定返回的麻将牌列表。
+    /// 演示识别结果中固定返回的麻将牌列表。也是ONNX要识别出并转化成的标准格式
     /// </summary>
     private static readonly RecognizedMahjongTile[] _demoTiles =
     [
@@ -26,7 +26,8 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
         new("6s", "六条", 0.95),
         new("7s", "七条", 0.95),
         new("8s", "八条", 0.94),
-        new("5p", "五筒", 0.93)
+        new("5p", "五筒", 0.93),
+        new("5p", "五筒", 0.98)
     ];
 
     /// <summary>
@@ -45,7 +46,7 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
             _demoTiles,
             "Hardcoded demo",
             "Stub",
-            "当前未接入 ONNX 模型，返回固定的 13 张手牌。");
+            "当前未接入 ONNX 模型，返回固定的 14 张胡牌状态手牌。");
 
         return Task.FromResult(result);
     }

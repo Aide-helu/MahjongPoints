@@ -5,7 +5,7 @@ using MahjongPoints.Models;
 namespace MahjongPoints.Services;
 
 /// <summary>
-/// 定义麻将图片识别服务。
+/// 定义麻将图片识别服务。作为一个接口，早期是硬编码在实现，后期要使用ONNX模型实现
 /// </summary>
 public interface IHandImageRecognizer
 {

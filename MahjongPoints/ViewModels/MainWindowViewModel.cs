@@ -158,16 +158,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             var recognitionResult = await _recognizer.RecognizeAsync(imagePath, cancellationToken);
 
             RecognizedTiles.Clear();
+            
+            //在界面塞入牌面
             foreach (var tile in recognitionResult.Tiles)
             {
                 RecognizedTiles.Add(tile);
             }
 
-            RecognitionSummary =
-                $"{recognitionResult.Tiles.Count} 张手牌 | {recognitionResult.InferenceMode} | {recognitionResult.ModelName}";
+            RecognitionSummary = $"{recognitionResult.Tiles.Count} 张手牌 | {recognitionResult.InferenceMode} | {recognitionResult.ModelName}";
 
             StatusMessage = "正在算点...";
+            
+            //算点服务入口
             var scoringResult = await _scoringService.CalculateAsync(recognitionResult.Tiles, cancellationToken);
+            
+            //界面结果显示
             ApplyScoringResult(scoringResult);
 
             StatusMessage = $"{recognitionResult.Message} {scoringResult.Message}";

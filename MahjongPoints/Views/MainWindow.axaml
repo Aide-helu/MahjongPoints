@@ -84,7 +84,7 @@
                     </Border>
 
                     <StackPanel Spacing="8">
-                        <TextBlock Text="识别出的 13 张手牌"
+                        <TextBlock Text="识别出的 14 张胡牌"
                                    FontSize="16"
                                    FontWeight="SemiBold"/>
                         <ItemsControl ItemsSource="{Binding RecognizedTiles}">
