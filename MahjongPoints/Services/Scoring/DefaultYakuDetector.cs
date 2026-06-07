@@ -12,7 +12,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 演示实现中支持的断幺九役种定义。
     /// </summary>
-    private static readonly MahjongYaku Duanyao = new(
+    private static readonly MahjongYaku _duanyao = new(
         "duanyao",
         "Duanyao",
         1,
@@ -34,7 +34,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
 
         if (splits.Count > 0 && IsTanyao(tiles))
         {
-            yakus.Add(Duanyao);
+            yakus.Add(_duanyao);
         }
 
         return new YakuDetectionResult(yakus, splits.FirstOrDefault());

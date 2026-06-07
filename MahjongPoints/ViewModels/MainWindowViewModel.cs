@@ -29,67 +29,67 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// 当前选择的图片完整路径。
     /// </summary>
     [ObservableProperty]
-    private string? selectedImagePath;
+    private string? _selectedImagePath;
 
     /// <summary>
     /// 当前选择图片的文件名。
     /// </summary>
     [ObservableProperty]
-    private string selectedFileName = "未选择图片";
+    private string _selectedFileName = "未选择图片";
 
     /// <summary>
     /// 当前图片预览位图。
     /// </summary>
     [ObservableProperty]
-    private Bitmap? previewImage;
+    private Bitmap? _previewImage;
 
     /// <summary>
     /// 界面顶部状态提示文本。
     /// </summary>
     [ObservableProperty]
-    private string statusMessage = "请选择一张图片，demo 会返回固定的胡牌手牌并计算点数。";
+    private string _statusMessage = "请选择一张图片，demo 会返回固定的胡牌手牌并计算点数。";
 
     /// <summary>
     /// 手牌识别摘要。
     /// </summary>
     [ObservableProperty]
-    private string recognitionSummary = "等待识别";
+    private string _recognitionSummary = "等待识别";
 
     /// <summary>
     /// 算点结果摘要。
     /// </summary>
     [ObservableProperty]
-    private string scoreSummary = "等待算点";
+    private string _scoreSummary = "等待算点";
 
     /// <summary>
     /// 当前和牌张显示文本。
     /// </summary>
     [ObservableProperty]
-    private string winningTileText = "胡牌张：未计算";
+    private string _winningTileText = "胡牌张：未计算";
 
     /// <summary>
     /// 当前牌型或拆牌结果显示文本。
     /// </summary>
     [ObservableProperty]
-    private string winningShape = "牌型：未计算";
+    private string _winningShape = "牌型：未计算";
 
     /// <summary>
     /// 算点流程提示文本。
     /// </summary>
     [ObservableProperty]
-    private string scoringMessage = "当前结果会在识别后自动送入算点逻辑。";
+    private string _scoringMessage = "当前结果会在识别后自动送入算点逻辑。";
 
     /// <summary>
     /// 当前识别结果是否被算点服务判定为和牌。
     /// </summary>
     [ObservableProperty]
-    private bool isWinningHand;
+    private bool _isWinningHand;
 
     /// <summary>
     /// 当前是否正在执行图片加载、识别或算点流程。
     /// </summary>
     [ObservableProperty]
-    private bool isBusy;
+    private bool _isBusy;
 
     /// <summary>
     /// 界面展示的识别牌集合。

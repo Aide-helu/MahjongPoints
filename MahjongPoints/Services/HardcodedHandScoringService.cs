@@ -15,7 +15,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// <summary>
     /// 演示流程中补入的固定和牌张。
     /// </summary>
-    private static readonly RecognizedMahjongTile WinningTile = new("5p", "5 pin", 1.0);
+    private static readonly RecognizedMahjongTile _winningTile = new("5p", "5 pin", 1.0);
 
     /// <summary>
     /// 手牌拆解器。
@@ -80,8 +80,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var calculationTiles = recognizedTiles.Concat([WinningTile]).ToArray();
-        var context = new MahjongScoringContext(WinningTile);
+        var calculationTiles = recognizedTiles.Concat([_winningTile]).ToArray();
+        var context = new MahjongScoringContext(_winningTile);
 
         var splits = _handSplitter.Split(calculationTiles);
         var yakuResult = _yakuDetector.Detect(calculationTiles, splits, context);
@@ -96,7 +96,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
 
         var result = new MahjongScoringResult(
             calculationTiles,
-            WinningTile,
+            _winningTile,
             isWinningHand,
             winningShape,
             pointResult.Summary,

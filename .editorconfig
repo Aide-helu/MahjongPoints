@@ -1,0 +1,20 @@
+root = true
+
+#Rider命名规范设置，可删除
+
+[*.cs]
+# Private fields in this project use _lowerCamelCase, including static readonly fields.
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.private_field_style.required_prefix = _
+dotnet_naming_style.private_field_style.capitalization = camel_case
+
+dotnet_naming_rule.private_fields_should_use_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_should_use_underscore.style = private_field_style
+dotnet_naming_rule.private_fields_should_use_underscore.severity = warning
+
+# Rider/ReSharper predefined naming rules.
+resharper_csharp_naming_rule.private_instance_fields = _+aaBb
+resharper_csharp_naming_rule.private_static_fields = _+aaBb
+resharper_csharp_naming_rule.private_static_readonly = _+aaBb

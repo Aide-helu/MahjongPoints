@@ -13,7 +13,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
     /// <summary>
     /// 支持组成顺子的数牌花色。
     /// </summary>
-    private static readonly char[] Suits = ['m', 'p', 's'];
+    private static readonly char[] _suits = ['m', 'p', 's'];
 
     /// <summary>
     /// 把 14 张牌拆解为所有可能的 4 面子加 1 雀头结构。
@@ -152,7 +152,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
         value = 0;
         suit = '\0';
 
-        if (code.Length != 2 || !char.IsDigit(code[0]) || !Suits.Contains(code[1]))
+        if (code.Length != 2 || !char.IsDigit(code[0]) || !_suits.Contains(code[1]))
         {
             return false;
         }

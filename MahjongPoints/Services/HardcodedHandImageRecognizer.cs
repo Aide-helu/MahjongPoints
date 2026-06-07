@@ -12,7 +12,7 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
     /// <summary>
     /// 演示识别结果中固定返回的麻将牌列表。
     /// </summary>
-    private static readonly RecognizedMahjongTile[] DemoTiles =
+    private static readonly RecognizedMahjongTile[] _demoTiles =
     [
         new("2m", "二万", 0.99),
         new("3m", "三万", 0.98),
@@ -42,7 +42,7 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
         cancellationToken.ThrowIfCancellationRequested();
 
         var result = new MahjongHandRecognitionResult(
-            DemoTiles,
+            _demoTiles,
             "Hardcoded demo",
             "Stub",
             "当前未接入 ONNX 模型，返回固定的 13 张手牌。");
