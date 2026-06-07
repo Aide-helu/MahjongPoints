@@ -3,22 +3,39 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MahjongPoints.Models;
+using MahjongPoints.Services.Scoring;
 
 namespace MahjongPoints.Services;
 
 public sealed class HardcodedHandScoringService : IHandScoringService
 {
-    private static readonly RecognizedMahjongTile WinningTile = new("5p", "五筒", 1.0);
+    private static readonly RecognizedMahjongTile WinningTile = new("5p", "5 pin", 1.0);
 
-    private static readonly MahjongScoreItem[] DemoScoreItems =
-    [
-        new(
-            "断幺九",
-            1,
-            30,
-            1000,
-            "硬编码 demo 牌型全部由 2-8 的数牌组成，按 1 番 30 符固定返回。")
-    ];
+    private readonly IHandSplitter _handSplitter;
+    private readonly IYakuDetector _yakuDetector;
+    private readonly IFuCalculator _fuCalculator;
+    private readonly IScoreCalculator _scoreCalculator;
+
+    public HardcodedHandScoringService()
+        : this(
+            new DefaultHandSplitter(),
+            new DefaultYakuDetector(),
+            new DefaultFuCalculator(),
+            new DefaultScoreCalculator())
+    {
+    }
+
+    public HardcodedHandScoringService(
+        IHandSplitter handSplitter,
+        IYakuDetector yakuDetector,
+        IFuCalculator fuCalculator,
+        IScoreCalculator scoreCalculator)
+    {
+        _handSplitter = handSplitter;
+        _yakuDetector = yakuDetector;
+        _fuCalculator = fuCalculator;
+        _scoreCalculator = scoreCalculator;
+    }
 
     public Task<MahjongScoringResult> CalculateAsync(
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
@@ -27,50 +44,32 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         cancellationToken.ThrowIfCancellationRequested();
 
         var calculationTiles = recognizedTiles.Concat([WinningTile]).ToArray();
+        var context = new MahjongScoringContext(WinningTile);
+
+        var splits = _handSplitter.Split(calculationTiles);
+        var yakuResult = _yakuDetector.Detect(calculationTiles, splits, context);
+        var fuResult = _fuCalculator.Calculate(calculationTiles, yakuResult, context);
+        var pointResult = _scoreCalculator.Calculate(yakuResult, fuResult, context);
+
+        var isWinningHand = splits.Count > 0 && yakuResult.Yakus.Count > 0 && pointResult.TotalPoints > 0;
+        var winningShape = yakuResult.SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
+        var message = isWinningHand
+            ? "Scoring pipeline completed: split hand, detected yaku, calculated fu, calculated points."
+            : "Scoring pipeline completed, but the hand has no valid yaku yet.";
 
         var result = new MahjongScoringResult(
             calculationTiles,
             WinningTile,
-            IsWinningHand: IsDemoWinningShape(calculationTiles),
-            WinningShape: "二三四万 + 三四五万 + 四五六筒 + 六七八条 + 五筒雀头",
-            ScoreSummary: "胡牌 | 1 番 30 符 | 1000 点",
-            TotalFan: 1,
-            Fu: 30,
-            TotalPoints: 1000,
-            DemoScoreItems,
-            "已将硬编码的 13 张识别结果和胡牌张送入算点逻辑。");
+            isWinningHand,
+            winningShape,
+            pointResult.Summary,
+            pointResult.TotalFan,
+            pointResult.Fu,
+            pointResult.TotalPoints,
+            pointResult.Items,
+            message);
 
         return Task.FromResult(result);
     }
-
-    private static bool IsDemoWinningShape(IReadOnlyList<RecognizedMahjongTile> tiles)
-    {
-        if (tiles.Count != 14)
-        {
-            return false;
-        }
-
-        var expectedCounts = new Dictionary<string, int>
-        {
-            ["2m"] = 1,
-            ["3m"] = 2,
-            ["4m"] = 2,
-            ["5m"] = 1,
-            ["4p"] = 1,
-            ["5p"] = 3,
-            ["6p"] = 1,
-            ["6s"] = 1,
-            ["7s"] = 1,
-            ["8s"] = 1
-        };
-
-        var actualCounts = tiles
-            .GroupBy(tile => tile.Code)
-            .ToDictionary(group => group.Key, group => group.Count());
-
-        return expectedCounts.Count == actualCounts.Count
-               && expectedCounts.All(expected =>
-                   actualCounts.TryGetValue(expected.Key, out var actual)
-                   && actual == expected.Value);
-    }
 }
+

@@ -55,6 +55,7 @@ ScaffoldingReadMe.txt
 *~
 CodeCoverage/
 coverage/
+riichi-mahjong-helper/
 
 # MSBuild Binary and Structured Log
 *.binlog
