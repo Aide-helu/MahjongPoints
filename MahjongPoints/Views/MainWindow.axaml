@@ -122,40 +122,32 @@
                         </ItemsControl>
                     </StackPanel>
 
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="算点用 14 张牌"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"/>
-                        <ItemsControl ItemsSource="{Binding CalculationTiles}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Width="72"
-                                            Margin="0,0,8,8"
-                                            Padding="8"
-                                            BorderBrush="#C7D7FE"
-                                            BorderThickness="1"
-                                            Background="#F5F8FF"
-                                            CornerRadius="4">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="{Binding DisplayName}"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Code}"
-                                                       FontSize="11"
-                                                       Foreground="#667085"
-                                                       HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                    <Border BorderBrush="#D0D5DD"
+                            BorderThickness="1"
+                            Background="White"
+                            CornerRadius="4"
+                            Padding="12">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="算点选项"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"/>
+                            <ItemsControl ItemsSource="{Binding ScoringOptionItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox MinWidth="120"
+                                                  Margin="0,0,12,8"
+                                                  Content="{Binding DisplayName}"
+                                                  IsChecked="{Binding IsChecked, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
 
                     <StackPanel Spacing="8">
                         <TextBlock Text="番符明细"

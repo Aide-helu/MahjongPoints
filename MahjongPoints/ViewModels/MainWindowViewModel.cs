@@ -7,6 +7,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MahjongPoints.Models;
 using MahjongPoints.Services;
+using MahjongPoints.Services.Scoring;
 
 namespace MahjongPoints.ViewModels;
 
@@ -106,6 +107,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<MahjongScoreItem> ScoreItems { get; } = [];
 
+    public MahjongScoringContext ScoringContext { get; } = new();
+
+    public ObservableCollection<MahjongScoringOptionItem> ScoringOptionItems { get; } = [];
+
     /// <summary>
     /// 使用默认演示识别服务和默认演示算点服务创建主窗口视图模型。
     /// </summary>
@@ -125,6 +130,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _recognizer = recognizer;
         _scoringService = scoringService;
+
+        foreach (var option in MahjongScoringOptionItem.CreateItems(ScoringContext))
+        {
+            ScoringOptionItems.Add(option);
+        }
     }
 
     /// <summary>

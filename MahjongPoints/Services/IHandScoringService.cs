@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MahjongPoints.Models;
+using MahjongPoints.Services.Scoring;
 
 namespace MahjongPoints.Services;
 
@@ -18,5 +19,6 @@ public interface IHandScoringService
     /// <returns>算点结果。</returns>
     Task<MahjongScoringResult> CalculateAsync(
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
+        MahjongScoringContext context,
         CancellationToken cancellationToken = default);
 }
