@@ -4,17 +4,38 @@ using MahjongPoints.Models;
 
 namespace MahjongPoints.Services.Scoring;
 
+/// <summary>
+/// 表示麻将面子类型。
+/// </summary>
 public enum MahjongMeldType
 {
+    /// <summary>
+    /// 顺子。
+    /// </summary>
     Sequence,
+
+    /// <summary>
+    /// 刻子。
+    /// </summary>
     Triplet,
+
+    /// <summary>
+    /// 杠子。
+    /// </summary>
     Quad
 }
 
+/// <summary>
+/// 表示一个麻将面子。
+/// </summary>
+/// <param name="Type">面子类型。</param>
+/// <param name="Tiles">组成面子的牌列表。</param>
 public sealed record MahjongMeld(
     MahjongMeldType Type,
     IReadOnlyList<RecognizedMahjongTile> Tiles)
 {
+    /// <summary>
+    /// 供界面展示的面子文本。
+    /// </summary>
     public string DisplayText => string.Join(" ", Tiles.Select(tile => tile.Code));
 }
-

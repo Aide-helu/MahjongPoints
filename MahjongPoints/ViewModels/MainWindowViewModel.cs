@@ -10,55 +10,115 @@ using MahjongPoints.Services;
 
 namespace MahjongPoints.ViewModels;
 
+/// <summary>
+/// 主窗口的视图模型，负责图片加载、手牌识别、算点调用和界面状态更新。
+/// </summary>
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
+    /// <summary>
+    /// 手牌图片识别服务。
+    /// </summary>
     private readonly IHandImageRecognizer _recognizer;
+
+    /// <summary>
+    /// 手牌算点服务。
+    /// </summary>
     private readonly IHandScoringService _scoringService;
 
+    /// <summary>
+    /// 当前选择的图片完整路径。
+    /// </summary>
     [ObservableProperty]
     private string? selectedImagePath;
 
+    /// <summary>
+    /// 当前选择图片的文件名。
+    /// </summary>
     [ObservableProperty]
     private string selectedFileName = "未选择图片";
 
+    /// <summary>
+    /// 当前图片预览位图。
+    /// </summary>
     [ObservableProperty]
     private Bitmap? previewImage;
 
+    /// <summary>
+    /// 界面顶部状态提示文本。
+    /// </summary>
     [ObservableProperty]
     private string statusMessage = "请选择一张图片，demo 会返回固定的胡牌手牌并计算点数。";
 
+    /// <summary>
+    /// 手牌识别摘要。
+    /// </summary>
     [ObservableProperty]
     private string recognitionSummary = "等待识别";
 
+    /// <summary>
+    /// 算点结果摘要。
+    /// </summary>
     [ObservableProperty]
     private string scoreSummary = "等待算点";
 
+    /// <summary>
+    /// 当前和牌张显示文本。
+    /// </summary>
     [ObservableProperty]
     private string winningTileText = "胡牌张：未计算";
 
+    /// <summary>
+    /// 当前牌型或拆牌结果显示文本。
+    /// </summary>
     [ObservableProperty]
     private string winningShape = "牌型：未计算";
 
+    /// <summary>
+    /// 算点流程提示文本。
+    /// </summary>
     [ObservableProperty]
     private string scoringMessage = "当前结果会在识别后自动送入算点逻辑。";
 
+    /// <summary>
+    /// 当前识别结果是否被算点服务判定为和牌。
+    /// </summary>
     [ObservableProperty]
     private bool isWinningHand;
 
+    /// <summary>
+    /// 当前是否正在执行图片加载、识别或算点流程。
+    /// </summary>
     [ObservableProperty]
     private bool isBusy;
 
+    /// <summary>
+    /// 界面展示的识别牌集合。
+    /// </summary>
     public ObservableCollection<RecognizedMahjongTile> RecognizedTiles { get; } = [];
 
+    /// <summary>
+    /// 界面展示的算点用完整牌集合。
+    /// </summary>
     public ObservableCollection<RecognizedMahjongTile> CalculationTiles { get; } = [];
 
+    /// <summary>
+    /// 界面展示的役种或得分明细集合。
+    /// </summary>
     public ObservableCollection<MahjongScoreItem> ScoreItems { get; } = [];
 
+    /// <summary>
+    /// 使用默认演示识别服务和默认演示算点服务创建主窗口视图模型。
+    /// </summary>
     public MainWindowViewModel()
         : this(new HardcodedHandImageRecognizer(), new HardcodedHandScoringService())
     {
     }
 
+    /// <summary>
+    /// 使用指定识别服务和算点服务创建主窗口视图模型。
+    /// </summary>
+    /// <param name="recognizer">手牌图片识别服务。</param>
+    /// <param name="scoringService">手牌算点服务。</param>
     public MainWindowViewModel(
         IHandImageRecognizer recognizer,
         IHandScoringService scoringService)
@@ -67,6 +127,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _scoringService = scoringService;
     }
 
+    /// <summary>
+    /// 加载指定图片，执行手牌识别，并将识别结果送入算点服务。
+    /// </summary>
+    /// <param name="imagePath">待加载和识别的图片路径。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>异步操作任务。</returns>
     public async Task LoadAndRecognizeAsync(
         string imagePath,
         CancellationToken cancellationToken = default)
@@ -119,11 +185,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// 释放当前图片预览占用的位图资源。
+    /// </summary>
     public void Dispose()
     {
         PreviewImage?.Dispose();
     }
 
+    /// <summary>
+    /// 将算点结果写入界面绑定集合和状态属性。
+    /// </summary>
+    /// <param name="result">算点服务返回的结果。</param>
     private void ApplyScoringResult(MahjongScoringResult result)
     {
         CalculationTiles.Clear();
@@ -145,6 +218,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ScoringMessage = result.Message;
     }
 
+    /// <summary>
+    /// 清空当前识别和算点结果，恢复等待状态。
+    /// </summary>
     private void ResetResultState()
     {
         RecognizedTiles.Clear();
@@ -158,6 +234,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IsWinningHand = false;
     }
 
+    /// <summary>
+    /// 替换当前预览图片，并释放旧的位图资源。
+    /// </summary>
+    /// <param name="bitmap">新的预览位图。</param>
     private void ReplacePreviewImage(Bitmap bitmap)
     {
         var oldPreview = PreviewImage;

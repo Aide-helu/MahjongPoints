@@ -4,8 +4,14 @@ using MahjongPoints.Models;
 
 namespace MahjongPoints.Services;
 
+/// <summary>
+/// 演示用手牌图片识别服务，始终返回固定的 13 张手牌。
+/// </summary>
 public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
 {
+    /// <summary>
+    /// 演示识别结果中固定返回的麻将牌列表。
+    /// </summary>
     private static readonly RecognizedMahjongTile[] DemoTiles =
     [
         new("2m", "二万", 0.99),
@@ -23,6 +29,12 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
         new("5p", "五筒", 0.93)
     ];
 
+    /// <summary>
+    /// 返回固定的演示识别结果。
+    /// </summary>
+    /// <param name="imagePath">待识别图片路径，当前演示实现不会读取此文件。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>固定的手牌识别结果。</returns>
     public Task<MahjongHandRecognitionResult> RecognizeAsync(
         string imagePath,
         CancellationToken cancellationToken = default)

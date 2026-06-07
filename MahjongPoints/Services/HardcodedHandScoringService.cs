@@ -7,15 +7,39 @@ using MahjongPoints.Services.Scoring;
 
 namespace MahjongPoints.Services;
 
+/// <summary>
+/// 演示用手牌算点服务，使用固定和牌张并串联四层算点框架。
+/// </summary>
 public sealed class HardcodedHandScoringService : IHandScoringService
 {
+    /// <summary>
+    /// 演示流程中补入的固定和牌张。
+    /// </summary>
     private static readonly RecognizedMahjongTile WinningTile = new("5p", "5 pin", 1.0);
 
+    /// <summary>
+    /// 手牌拆解器。
+    /// </summary>
     private readonly IHandSplitter _handSplitter;
+
+    /// <summary>
+    /// 役种检测器。
+    /// </summary>
     private readonly IYakuDetector _yakuDetector;
+
+    /// <summary>
+    /// 符数计算器。
+    /// </summary>
     private readonly IFuCalculator _fuCalculator;
+
+    /// <summary>
+    /// 点数计算器。
+    /// </summary>
     private readonly IScoreCalculator _scoreCalculator;
 
+    /// <summary>
+    /// 使用默认四层算点组件创建演示算点服务。
+    /// </summary>
     public HardcodedHandScoringService()
         : this(
             new DefaultHandSplitter(),
@@ -25,6 +49,13 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     {
     }
 
+    /// <summary>
+    /// 使用指定四层算点组件创建演示算点服务。
+    /// </summary>
+    /// <param name="handSplitter">手牌拆解器。</param>
+    /// <param name="yakuDetector">役种检测器。</param>
+    /// <param name="fuCalculator">符数计算器。</param>
+    /// <param name="scoreCalculator">点数计算器。</param>
     public HardcodedHandScoringService(
         IHandSplitter handSplitter,
         IYakuDetector yakuDetector,
@@ -37,6 +68,12 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         _scoreCalculator = scoreCalculator;
     }
 
+    /// <summary>
+    /// 把识别出的 13 张牌补入固定和牌张后，依次执行拆牌、判役、算符和算点。
+    /// </summary>
+    /// <param name="recognizedTiles">识别出的手牌列表。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>演示算点结果。</returns>
     public Task<MahjongScoringResult> CalculateAsync(
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
         CancellationToken cancellationToken = default)
@@ -72,4 +109,3 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         return Task.FromResult(result);
     }
 }
-

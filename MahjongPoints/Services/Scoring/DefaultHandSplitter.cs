@@ -5,10 +5,21 @@ using MahjongPoints.Models;
 
 namespace MahjongPoints.Services.Scoring;
 
+/// <summary>
+/// 默认手牌拆解器，枚举标准 4 面子加 1 雀头的拆法。
+/// </summary>
 public sealed class DefaultHandSplitter : IHandSplitter
 {
+    /// <summary>
+    /// 支持组成顺子的数牌花色。
+    /// </summary>
     private static readonly char[] Suits = ['m', 'p', 's'];
 
+    /// <summary>
+    /// 把 14 张牌拆解为所有可能的 4 面子加 1 雀头结构。
+    /// </summary>
+    /// <param name="tiles">参与拆解的完整牌列表。</param>
+    /// <returns>所有可用的手牌拆解结果。</returns>
     public IReadOnlyList<MahjongHandSplit> Split(IReadOnlyList<RecognizedMahjongTile> tiles)
     {
         if (tiles.Count != 14)
@@ -43,6 +54,13 @@ public sealed class DefaultHandSplitter : IHandSplitter
         return results;
     }
 
+    /// <summary>
+    /// 在剩余牌计数中递归查找所有可用面子组合。
+    /// </summary>
+    /// <param name="counts">剩余牌计数字典。</param>
+    /// <param name="tileByCode">牌编码到牌对象的映射。</param>
+    /// <param name="current">当前已经拆出的面子列表。</param>
+    /// <returns>所有递归得到的面子组合。</returns>
     private static IReadOnlyList<IReadOnlyList<MahjongMeld>> FindMelds(
         IReadOnlyDictionary<string, int> counts,
         IReadOnlyDictionary<string, RecognizedMahjongTile> tileByCode,
@@ -98,9 +116,21 @@ public sealed class DefaultHandSplitter : IHandSplitter
         return results;
     }
 
+    /// <summary>
+    /// 判断剩余牌计数中是否还有指定编码的牌。
+    /// </summary>
+    /// <param name="counts">剩余牌计数字典。</param>
+    /// <param name="code">麻将牌编码。</param>
+    /// <returns>如果指定牌仍有剩余，则返回 <c>true</c>。</returns>
     private static bool HasTile(IReadOnlyDictionary<string, int> counts, string code) =>
         counts.TryGetValue(code, out var count) && count > 0;
 
+    /// <summary>
+    /// 从剩余牌计数中移除指定数量的牌。
+    /// </summary>
+    /// <param name="counts">剩余牌计数字典。</param>
+    /// <param name="code">麻将牌编码。</param>
+    /// <param name="amount">要移除的数量。</param>
     private static void RemoveTiles(IDictionary<string, int> counts, string code, int amount)
     {
         counts[code] -= amount;
@@ -110,6 +140,13 @@ public sealed class DefaultHandSplitter : IHandSplitter
         }
     }
 
+    /// <summary>
+    /// 尝试把牌编码解析为数牌点数和花色。
+    /// </summary>
+    /// <param name="code">麻将牌编码。</param>
+    /// <param name="value">解析出的点数。</param>
+    /// <param name="suit">解析出的花色。</param>
+    /// <returns>如果编码是合法数牌，则返回 <c>true</c>。</returns>
     private static bool TryGetSuitedTile(string code, out int value, out char suit)
     {
         value = 0;
@@ -125,6 +162,11 @@ public sealed class DefaultHandSplitter : IHandSplitter
         return value is >= 1 and <= 9;
     }
 
+    /// <summary>
+    /// 获取牌编码的稳定排序键，用于递归拆牌时固定处理顺序。
+    /// </summary>
+    /// <param name="code">麻将牌编码。</param>
+    /// <returns>排序键。</returns>
     private static string GetSortKey(string code)
     {
         if (TryGetSuitedTile(code, out var value, out var suit))
@@ -135,4 +177,3 @@ public sealed class DefaultHandSplitter : IHandSplitter
         return $"z{code}";
     }
 }
-
