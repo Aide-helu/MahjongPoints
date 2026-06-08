@@ -67,10 +67,12 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// 把识别出的 14 张胡牌状态手牌依次送入拆牌、判役、算符和算点流程。
     /// </summary>
     /// <param name="recognizedTiles">识别出的手牌列表。</param>
+    /// <param name="context">用户选择的胡牌状态和算点环境。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     /// <returns>演示算点结果。</returns>
     public Task<MahjongScoringResult> CalculateAsync(
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
+        MahjongScoringContext context,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -82,9 +84,6 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         var winningTile = calculationTiles.Length > 0
             ? calculationTiles[^1]
             : new RecognizedMahjongTile("unknown", "未知", 0);
-
-        // 算点上下文保存是否自摸、是否亲家等环境信息；当前 demo 使用默认环境。
-        var context = new MahjongScoringContext();
 
         // 四层算点流水线：先拆牌，再判役，再算符，最后把番符换算成点数。
         var splits = _handSplitter.Split(calculationTiles);

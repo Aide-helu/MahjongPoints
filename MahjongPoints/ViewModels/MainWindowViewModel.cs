@@ -180,7 +180,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             StatusMessage = "正在算点...";
             
             //算点服务入口
-            var scoringResult = await _scoringService.CalculateAsync(recognitionResult.Tiles, cancellationToken);
+            var scoringResult = await _scoringService.CalculateAsync(
+                recognitionResult.Tiles,
+                ScoringContext,
+                cancellationToken);
             
             //界面结果显示
             ApplyScoringResult(scoringResult);
