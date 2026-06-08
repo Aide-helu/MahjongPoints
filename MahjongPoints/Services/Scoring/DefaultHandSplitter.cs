@@ -31,15 +31,21 @@ public sealed class DefaultHandSplitter : IHandSplitter
             .GroupBy(tile => tile.Code)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
 
+        //分组统计，分组统计计算每张牌的总数，然后输出为一个字典
         var counts = tiles
             .GroupBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
         var results = new List<MahjongHandSplit>();
 
+        
+        //这个循环尝试选择出总数大于等于2的Key
         foreach (var pairCode in counts.Where(pair => pair.Value >= 2).Select(pair => pair.Key).ToArray())
         {
+            //记录一个拷贝字典，拷贝counts
             var remainingCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
+            
+            //去掉
             RemoveTiles(remainingCounts, pairCode, 2);
 
             foreach (var melds in FindMelds(remainingCounts, tileByCode, []))
@@ -54,6 +60,9 @@ public sealed class DefaultHandSplitter : IHandSplitter
         return results;
     }
 
+    
+    
+    
     /// <summary>
     /// 在剩余牌计数中递归查找所有可用面子组合。
     /// </summary>
@@ -66,16 +75,19 @@ public sealed class DefaultHandSplitter : IHandSplitter
         IReadOnlyDictionary<string, RecognizedMahjongTile> tileByCode,
         IReadOnlyList<MahjongMeld> current)
     {
+        // 所有牌都被用完时，只有刚好拆出 4 个面子才算成功拆法。
         if (counts.Values.All(count => count == 0))
         {
             return current.Count == 4 ? [current] : [];
         }
 
+        // 标准胡牌最多只有 4 个面子，已经达到 4 个还剩牌就说明这条拆法失败。
         if (current.Count >= 4)
         {
             return [];
         }
 
+        // 固定从剩余牌里排序最靠前的一张开始拆，避免同一组面子因为顺序不同被重复枚举。
         var firstCode = counts
             .Where(pair => pair.Value > 0)
             .Select(pair => pair.Key)
@@ -84,6 +96,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
 
         var results = new List<IReadOnlyList<MahjongMeld>>();
 
+        // 分支一：如果当前牌至少有 3 张，尝试把它作为刻子移除。
         if (counts[firstCode] >= 3)
         {
             var nextCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
@@ -93,11 +106,13 @@ public sealed class DefaultHandSplitter : IHandSplitter
             results.AddRange(FindMelds(nextCounts, tileByCode, [.. current, meld]));
         }
 
+        // 分支二：如果当前牌是 1 到 7 的数牌，尝试和后两张同花色牌组成顺子。
         if (TryGetSuitedTile(firstCode, out var value, out var suit) && value <= 7)
         {
             var secondCode = $"{value + 1}{suit}";
             var thirdCode = $"{value + 2}{suit}";
 
+            // 只有后两张牌都存在时，当前牌才能进入顺子分支。
             if (HasTile(counts, secondCode) && HasTile(counts, thirdCode))
             {
                 var nextCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
@@ -105,6 +120,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
                 RemoveTiles(nextCounts, secondCode, 1);
                 RemoveTiles(nextCounts, thirdCode, 1);
 
+                // 把这组顺子加入当前拆法，并继续递归处理剩余牌。
                 var meld = new MahjongMeld(
                     MahjongMeldType.Sequence,
                     [tileByCode[firstCode], tileByCode[secondCode], tileByCode[thirdCode]]);
@@ -113,8 +129,12 @@ public sealed class DefaultHandSplitter : IHandSplitter
             }
         }
 
+        // 汇总当前牌走刻子分支和顺子分支后得到的所有合法拆法。
         return results;
     }
+    
+    
+    
 
     /// <summary>
     /// 判断剩余牌计数中是否还有指定编码的牌。

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,8 +109,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<MahjongScoreItem> ScoreItems { get; } = [];
 
+    /// <summary>
+    /// 用户当前选择的胡牌状态和算点环境。
+    /// </summary>
     public MahjongScoringContext ScoringContext { get; } = new();
 
+    /// <summary>
+    /// 界面展示的算点选项集合。
+    /// </summary>
     public ObservableCollection<MahjongScoringOptionItem> ScoringOptionItems { get; } = [];
 
     /// <summary>
@@ -135,6 +143,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             ScoringOptionItems.Add(option);
         }
+
+        ScoringContext.PropertyChanged += ScoringContext_OnPropertyChanged;
     }
 
     /// <summary>
@@ -175,6 +185,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 RecognizedTiles.Add(tile);
             }
 
+            SelectDefaultWinningTile(recognitionResult.Tiles);
+
             RecognitionSummary = $"{recognitionResult.Tiles.Count} 张手牌 | {recognitionResult.InferenceMode} | {recognitionResult.ModelName}";
 
             StatusMessage = "正在算点...";
@@ -208,7 +220,100 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void Dispose()
     {
+        ScoringContext.PropertyChanged -= ScoringContext_OnPropertyChanged;
         PreviewImage?.Dispose();
+    }
+
+    /// <summary>
+    /// 处理算点上下文变化，并在用户修改胡牌状态后重新算点。
+    /// </summary>
+    /// <param name="sender">触发属性变化的对象。</param>
+    /// <param name="e">属性变化事件参数。</param>
+    private async void ScoringContext_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!IsScoringInputProperty(e.PropertyName))
+        {
+            return;
+        }
+
+        if (string.Equals(e.PropertyName, nameof(MahjongScoringContext.WinningTile), StringComparison.Ordinal))
+        {
+            RefreshWinningTileText();
+        }
+
+        if (IsBusy || RecognizedTiles.Count == 0)
+        {
+            return;
+        }
+
+        await RecalculateCurrentHandAsync();
+    }
+
+    /// <summary>
+    /// 判断指定属性变化是否需要重新算点。
+    /// </summary>
+    /// <param name="propertyName">发生变化的属性名称。</param>
+    /// <returns>如果该属性会影响算点结果，则返回 <c>true</c>。</returns>
+    private static bool IsScoringInputProperty(string? propertyName)
+    {
+        return propertyName is null
+            or nameof(MahjongScoringContext.WinningTile)
+            or nameof(MahjongScoringContext.IsParent)
+            or nameof(MahjongScoringContext.IsRiichi)
+            or nameof(MahjongScoringContext.IsOpenHand)
+            or nameof(MahjongScoringContext.IsIppatsu)
+            or nameof(MahjongScoringContext.IsTsumo)
+            or nameof(MahjongScoringContext.RiichiSticks);
+    }
+
+    /// <summary>
+    /// 识别完成后为当前手牌选择默认胡牌张。
+    /// </summary>
+    /// <param name="recognizedTiles">识别出的 14 张胡牌状态手牌。</param>
+    private void SelectDefaultWinningTile(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
+    {
+        if (recognizedTiles.Count == 0)
+        {
+            ScoringContext.ResetWinningTile();
+            return;
+        }
+
+        ScoringContext.WinningTile = recognizedTiles[recognizedTiles.Count - 1];
+    }
+
+    /// <summary>
+    /// 使用当前识别牌和当前算点上下文重新计算结果。
+    /// </summary>
+    /// <returns>异步操作任务。</returns>
+    private async Task RecalculateCurrentHandAsync()
+    {
+        StatusMessage = "正在根据当前胡牌状态重新算点...";
+
+        try
+        {
+            var recognizedTiles = new List<RecognizedMahjongTile>(RecognizedTiles);
+            var scoringResult = await _scoringService.CalculateAsync(
+                recognizedTiles,
+                ScoringContext);
+
+            ApplyScoringResult(scoringResult);
+            StatusMessage = scoringResult.Message;
+        }
+        catch (Exception ex)
+        {
+            ScoreSummary = "算点失败";
+            ScoringMessage = ex.Message;
+            StatusMessage = ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// 根据当前上下文里的胡牌张刷新界面显示文本。
+    /// </summary>
+    private void RefreshWinningTileText()
+    {
+        var winningTile = ScoringContext.WinningTile;
+        WinningTileText = $"胡牌张：{winningTile.DisplayName} ({winningTile.Code})";
     }
 
     /// <summary>

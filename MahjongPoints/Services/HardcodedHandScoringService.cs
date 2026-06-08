@@ -80,10 +80,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         // ONNX 或 demo 识别器应直接返回 14 张胡牌状态手牌，这里直接使用识别结果。
         var calculationTiles = recognizedTiles.ToArray();
 
-        // 目前没有单独识别和牌张，界面显示暂时取 14 张牌中的最后一张作为和牌张。
-        var winningTile = calculationTiles.Length > 0
-            ? calculationTiles[^1]
-            : new RecognizedMahjongTile("unknown", "未知", 0);
+        // 胡牌张来自用户在界面选择后写入的算点上下文。
+        var winningTile = context.WinningTile;
 
         // 四层算点流水线：先拆牌，再判役，再算符，最后把番符换算成点数。
         var splits = _handSplitter.Split(calculationTiles);

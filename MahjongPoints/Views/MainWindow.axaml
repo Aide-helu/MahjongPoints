@@ -87,16 +87,32 @@
                         <TextBlock Text="识别出的 14 张胡牌"
                                    FontSize="16"
                                    FontWeight="SemiBold"/>
-                        <ItemsControl ItemsSource="{Binding RecognizedTiles}">
-                            <ItemsControl.ItemsPanel>
+                        <ListBox ItemsSource="{Binding RecognizedTiles}"
+                                 SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
+                                 SelectionMode="Single"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Padding="0">
+                            <ListBox.Styles>
+                                <Style Selector="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0,0,8,8"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                                <Style Selector="ListBoxItem:selected Border.tile-card">
+                                    <Setter Property="BorderBrush" Value="#027A48"/>
+                                    <Setter Property="Background" Value="#ECFDF3"/>
+                                </Style>
+                            </ListBox.Styles>
+                            <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel/>
                                 </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="86"
-                                            Margin="0,0,8,8"
+                                    <Border Classes="tile-card"
+                                            Width="86"
                                             Padding="8"
                                             BorderBrush="#D0D5DD"
                                             BorderThickness="1"
@@ -118,8 +134,8 @@
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </StackPanel>
 
                     <Border BorderBrush="#D0D5DD"
