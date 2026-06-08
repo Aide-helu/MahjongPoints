@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -85,6 +86,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
 
         // 四层算点流水线：先拆牌，再判役，再算符，最后把番符换算成点数。
         var splits = _handSplitter.Split(calculationTiles);
+        WriteHandSplitsToConsole(calculationTiles, winningTile, splits);
+
         var yakuResult = _yakuDetector.Detect(calculationTiles, splits, context);
         var fuResult = _fuCalculator.Calculate(calculationTiles, yakuResult, context);
         var pointResult = _scoreCalculator.Calculate(yakuResult, fuResult, context);
@@ -110,5 +113,169 @@ public sealed class HardcodedHandScoringService : IHandScoringService
             message);
 
         return Task.FromResult(result);
+    }
+
+    /// <summary>
+    /// 把当前手牌拆解结果输出到控制台，方便先观察拆牌流程是否正确。
+    /// </summary>
+    /// <param name="calculationTiles">参与算点的 14 张牌。</param>
+    /// <param name="winningTile">用户选择的胡牌张。</param>
+    /// <param name="splits">拆牌器返回的所有拆解结果。</param>
+    private static void WriteHandSplitsToConsole(
+        IReadOnlyList<RecognizedMahjongTile> calculationTiles,
+        RecognizedMahjongTile winningTile,
+        IReadOnlyList<MahjongHandSplit> splits)
+    {
+        var orderedSplits = OrderHandSplits(splits).ToArray();
+
+        Console.WriteLine();
+        Console.WriteLine("======================================================================");
+        Console.WriteLine(" 拆牌组合输出");
+        Console.WriteLine("======================================================================");
+        Console.WriteLine($" 手牌      : {FormatTiles(calculationTiles)}");
+        Console.WriteLine($" 胡牌张    : {FormatTile(winningTile)}");
+        Console.WriteLine($" 组合总数  : {orderedSplits.Length}");
+        Console.WriteLine("----------------------------------------------------------------------");
+
+        if (orderedSplits.Length == 0)
+        {
+            Console.WriteLine(" 没有找到标准 4 面子 + 1 雀头拆法。");
+            Console.WriteLine("======================================================================");
+            Console.WriteLine();
+            return;
+        }
+
+        for (var splitIndex = 0; splitIndex < orderedSplits.Length; splitIndex++)
+        {
+            var split = orderedSplits[splitIndex];
+            var orderedMelds = OrderMelds(split.Melds).ToArray();
+
+            Console.WriteLine($" 组合 {splitIndex + 1:D2}/{orderedSplits.Length:D2}");
+            Console.WriteLine($"   雀头 : {FormatTile(split.Pair)}  {FormatTile(split.Pair)}");
+            Console.WriteLine("   面子 :");
+
+            for (var meldIndex = 0; meldIndex < orderedMelds.Length; meldIndex++)
+            {
+                var meld = orderedMelds[meldIndex];
+                Console.WriteLine(
+                    $"     {meldIndex + 1}. {GetMeldTypeName(meld.Type),-2} | {FormatTiles(meld.Tiles)}");
+            }
+
+            Console.WriteLine($"   结构 : {FormatHandSplit(split, orderedMelds)}");
+
+            if (splitIndex < orderedSplits.Length - 1)
+            {
+                Console.WriteLine("----------------------------------------------------------------------");
+            }
+        }
+
+        Console.WriteLine("======================================================================");
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// 按雀头和面子内容对拆牌组合排序，保证控制台输出稳定有序。
+    /// </summary>
+    /// <param name="splits">拆牌器返回的所有拆解结果。</param>
+    /// <returns>排序后的拆牌组合。</returns>
+    private static IEnumerable<MahjongHandSplit> OrderHandSplits(IEnumerable<MahjongHandSplit> splits)
+    {
+        return splits
+            .OrderBy(split => GetTileSortKey(split.Pair.Code), StringComparer.Ordinal)
+            .ThenBy(split => string.Join("|", OrderMelds(split.Melds).Select(GetMeldSortKey)), StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// 按面子类型和牌编码对单个拆法中的面子排序。
+    /// </summary>
+    /// <param name="melds">一个拆法中的面子列表。</param>
+    /// <returns>排序后的面子列表。</returns>
+    private static IEnumerable<MahjongMeld> OrderMelds(IEnumerable<MahjongMeld> melds)
+    {
+        return melds
+            .OrderBy(meld => meld.Type)
+            .ThenBy(GetMeldSortKey, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// 把多张牌格式化为控制台展示文本。
+    /// </summary>
+    /// <param name="tiles">要展示的牌列表。</param>
+    /// <returns>格式化后的牌列表文本。</returns>
+    private static string FormatTiles(IEnumerable<RecognizedMahjongTile> tiles)
+    {
+        return string.Join("  ", tiles.Select(FormatTile));
+    }
+
+    /// <summary>
+    /// 把单张牌格式化为控制台展示文本。
+    /// </summary>
+    /// <param name="tile">要展示的牌。</param>
+    /// <returns>格式化后的单张牌文本。</returns>
+    private static string FormatTile(RecognizedMahjongTile tile)
+    {
+        return $"{tile.DisplayName}({tile.Code})";
+    }
+
+    /// <summary>
+    /// 把完整拆法格式化为一行控制台展示文本。
+    /// </summary>
+    /// <param name="split">完整拆法。</param>
+    /// <param name="orderedMelds">已经排序后的面子列表。</param>
+    /// <returns>格式化后的完整拆法文本。</returns>
+    private static string FormatHandSplit(
+        MahjongHandSplit split,
+        IReadOnlyList<MahjongMeld> orderedMelds)
+    {
+        var meldParts = orderedMelds.Select(meld => $"[{GetMeldTypeName(meld.Type)} {FormatTiles(meld.Tiles)}]");
+        return string.Join(" + ", meldParts) + $" + [雀头 {FormatTile(split.Pair)}  {FormatTile(split.Pair)}]";
+    }
+
+    /// <summary>
+    /// 获取面子的排序键。
+    /// </summary>
+    /// <param name="meld">面子。</param>
+    /// <returns>面子排序键。</returns>
+    private static string GetMeldSortKey(MahjongMeld meld)
+    {
+        return $"{(int)meld.Type}:{string.Join(",", meld.Tiles.Select(tile => GetTileSortKey(tile.Code)))}";
+    }
+
+    /// <summary>
+    /// 获取牌编码的排序键，让控制台里的牌按万、筒、索、字牌顺序展示。
+    /// </summary>
+    /// <param name="code">牌编码。</param>
+    /// <returns>牌排序键。</returns>
+    private static string GetTileSortKey(string code)
+    {
+        if (code.Length == 2 && char.IsDigit(code[0]))
+        {
+            return code[1] switch
+            {
+                'm' or 'M' => $"0{code[0]}",
+                'p' or 'P' => $"1{code[0]}",
+                's' or 'S' => $"2{code[0]}",
+                'z' or 'Z' => $"3{code[0]}",
+                _ => $"9{code}"
+            };
+        }
+
+        return $"9{code}";
+    }
+
+    /// <summary>
+    /// 获取面子类型的中文名称。
+    /// </summary>
+    /// <param name="type">面子类型。</param>
+    /// <returns>面子类型中文名称。</returns>
+    private static string GetMeldTypeName(MahjongMeldType type)
+    {
+        return type switch
+        {
+            MahjongMeldType.Sequence => "顺子",
+            MahjongMeldType.Triplet => "刻子",
+            MahjongMeldType.Quad => "杠子",
+            _ => "未知"
+        };
     }
 }

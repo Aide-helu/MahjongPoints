@@ -27,6 +27,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
             return [];
         }
 
+        //通过编码获取单张牌的对象
         var tileByCode = tiles
             .GroupBy(tile => tile.Code)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
@@ -45,11 +46,14 @@ public sealed class DefaultHandSplitter : IHandSplitter
             //记录一个拷贝字典，拷贝counts
             var remainingCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
             
-            //去掉
+            //去掉去掉，得到12张牌
             RemoveTiles(remainingCounts, pairCode, 2);
 
+            //melds是其中一个分割序列
+            //FindMelds：输入12张牌字典类型，
             foreach (var melds in FindMelds(remainingCounts, tileByCode, []))
             {
+                //凑齐了四个面子
                 if (melds.Count == 4)
                 {
                     results.Add(new MahjongHandSplit(melds, tileByCode[pairCode]));
@@ -78,6 +82,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
         // 所有牌都被用完时，只有刚好拆出 4 个面子才算成功拆法。
         if (counts.Values.All(count => count == 0))
         {
+            //返回一层包装过的current
             return current.Count == 4 ? [current] : [];
         }
 
@@ -99,33 +104,49 @@ public sealed class DefaultHandSplitter : IHandSplitter
         // 分支一：如果当前牌至少有 3 张，尝试把它作为刻子移除。
         if (counts[firstCode] >= 3)
         {
+            //拷贝counts，当前的counts不执行删改
             var nextCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
+            //删除这个面子
             RemoveTiles(nextCounts, firstCode, 3);
+            //获取形成面子的单个对象
             var tile = tileByCode[firstCode];
+            //构建面子
             var meld = new MahjongMeld(MahjongMeldType.Triplet, [tile, tile, tile]);
+            //执行下一次递归
             results.AddRange(FindMelds(nextCounts, tileByCode, [.. current, meld]));
         }
 
         // 分支二：如果当前牌是 1 到 7 的数牌，尝试和后两张同花色牌组成顺子。
         if (TryGetSuitedTile(firstCode, out var value, out var suit) && value <= 7)
         {
+
+            //第一张，第二张和第三张牌
             var secondCode = $"{value + 1}{suit}";
             var thirdCode = $"{value + 2}{suit}";
-
-            // 只有后两张牌都存在时，当前牌才能进入顺子分支。
-            if (HasTile(counts, secondCode) && HasTile(counts, thirdCode))
+            
+            //查看这两张续牌是否存在
+            if (counts.ContainsKey(secondCode) && counts.ContainsKey(thirdCode))
             {
+                //拷贝counts，当前的counts不执行删改
                 var nextCounts = new Dictionary<string, int>(counts, StringComparer.OrdinalIgnoreCase);
+
+                
+                //两张续牌都存在
+                //删除这个面子
                 RemoveTiles(nextCounts, firstCode, 1);
-                RemoveTiles(nextCounts, secondCode, 1);
-                RemoveTiles(nextCounts, thirdCode, 1);
-
-                // 把这组顺子加入当前拆法，并继续递归处理剩余牌。
-                var meld = new MahjongMeld(
-                    MahjongMeldType.Sequence,
-                    [tileByCode[firstCode], tileByCode[secondCode], tileByCode[thirdCode]]);
-
-                results.AddRange(FindMelds(nextCounts, tileByCode, [.. current, meld]));
+                RemoveTiles(nextCounts,secondCode,1);
+                RemoveTiles(nextCounts,thirdCode,1);
+                
+                //获取构建这个面子的两个对象
+                var firstTile = tileByCode[secondCode];
+                var secondTile=tileByCode[secondCode];
+                var thirdTile = tileByCode[thirdCode];
+                
+                //构建面子
+                var meld = new MahjongMeld(MahjongMeldType.Sequence, [firstTile, secondTile, thirdTile]);
+                
+                //执行下一次递归
+                results.AddRange(FindMelds(nextCounts,tileByCode,[.. current, meld]));
             }
         }
 
@@ -183,7 +204,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
     }
 
     /// <summary>
-    /// 获取牌编码的稳定排序键，用于递归拆牌时固定处理顺序。
+    /// 获取牌编码的稳定排序键，用于递归拆牌时固定处理顺序，把牌从 2m->m2m 所有的万字前面都是m ，这样排序就能放一起了
     /// </summary>
     /// <param name="code">麻将牌编码。</param>
     /// <returns>排序键。</returns>
