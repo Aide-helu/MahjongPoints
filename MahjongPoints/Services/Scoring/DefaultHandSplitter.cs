@@ -138,7 +138,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
                 RemoveTiles(nextCounts,thirdCode,1);
                 
                 //获取构建这个面子的两个对象
-                var firstTile = tileByCode[secondCode];
+                var firstTile = tileByCode[firstCode];
                 var secondTile=tileByCode[secondCode];
                 var thirdTile = tileByCode[thirdCode];
                 

@@ -130,16 +130,16 @@ public sealed class HardcodedHandScoringService : IHandScoringService
 
         Console.WriteLine();
         Console.WriteLine("======================================================================");
-        Console.WriteLine(" 拆牌组合输出");
+        Console.WriteLine(" Hand split combinations");
         Console.WriteLine("======================================================================");
-        Console.WriteLine($" 手牌      : {FormatTiles(calculationTiles)}");
-        Console.WriteLine($" 胡牌张    : {FormatTile(winningTile)}");
-        Console.WriteLine($" 组合总数  : {orderedSplits.Length}");
+        Console.WriteLine($" Hand          : {FormatTiles(calculationTiles)}");
+        Console.WriteLine($" Winning tile  : {FormatTile(winningTile)}");
+        Console.WriteLine($" Total splits  : {orderedSplits.Length}");
         Console.WriteLine("----------------------------------------------------------------------");
 
         if (orderedSplits.Length == 0)
         {
-            Console.WriteLine(" 没有找到标准 4 面子 + 1 雀头拆法。");
+            Console.WriteLine(" No standard 4 melds + 1 pair split found.");
             Console.WriteLine("======================================================================");
             Console.WriteLine();
             return;
@@ -150,9 +150,9 @@ public sealed class HardcodedHandScoringService : IHandScoringService
             var split = orderedSplits[splitIndex];
             var orderedMelds = OrderMelds(split.Melds).ToArray();
 
-            Console.WriteLine($" 组合 {splitIndex + 1:D2}/{orderedSplits.Length:D2}");
-            Console.WriteLine($"   雀头 : {FormatTile(split.Pair)}  {FormatTile(split.Pair)}");
-            Console.WriteLine("   面子 :");
+            Console.WriteLine($" Split {splitIndex + 1:D2}/{orderedSplits.Length:D2}");
+            Console.WriteLine($"   Pair  : {FormatTile(split.Pair)}  {FormatTile(split.Pair)}");
+            Console.WriteLine("   Melds :");
 
             for (var meldIndex = 0; meldIndex < orderedMelds.Length; meldIndex++)
             {
@@ -161,7 +161,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
                     $"     {meldIndex + 1}. {GetMeldTypeName(meld.Type),-2} | {FormatTiles(meld.Tiles)}");
             }
 
-            Console.WriteLine($"   结构 : {FormatHandSplit(split, orderedMelds)}");
+            Console.WriteLine($"   Shape : {FormatHandSplit(split, orderedMelds)}");
 
             if (splitIndex < orderedSplits.Length - 1)
             {
@@ -214,7 +214,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// <returns>格式化后的单张牌文本。</returns>
     private static string FormatTile(RecognizedMahjongTile tile)
     {
-        return $"{tile.DisplayName}({tile.Code})";
+        return $"{GetTileDisplayName(tile.Code)}({tile.Code})";
     }
 
     /// <summary>
@@ -228,7 +228,57 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         IReadOnlyList<MahjongMeld> orderedMelds)
     {
         var meldParts = orderedMelds.Select(meld => $"[{GetMeldTypeName(meld.Type)} {FormatTiles(meld.Tiles)}]");
-        return string.Join(" + ", meldParts) + $" + [雀头 {FormatTile(split.Pair)}  {FormatTile(split.Pair)}]";
+        return string.Join(" + ", meldParts) + $" + [Pair {FormatTile(split.Pair)}  {FormatTile(split.Pair)}]";
+    }
+
+    /// <summary>
+    /// 获取控制台输出中使用的英文牌名。
+    /// </summary>
+    /// <param name="code">牌编码。</param>
+    /// <returns>英文牌名。</returns>
+    private static string GetTileDisplayName(string code)
+    {
+        if (code.Length != 2)
+        {
+            return code;
+        }
+
+        var rank = code[0];
+        var suit = char.ToLowerInvariant(code[1]);
+
+        if (!char.IsDigit(rank))
+        {
+            return code;
+        }
+
+        return suit switch
+        {
+            'm' => $"{rank} Characters",
+            'p' => $"{rank} Dots",
+            's' => $"{rank} Bamboo",
+            'z' => GetHonorTileDisplayName(rank),
+            _ => code
+        };
+    }
+
+    /// <summary>
+    /// 获取字牌编码对应的英文牌名。
+    /// </summary>
+    /// <param name="rank">字牌编码中的数字。</param>
+    /// <returns>英文牌名。</returns>
+    private static string GetHonorTileDisplayName(char rank)
+    {
+        return rank switch
+        {
+            '1' => "East",
+            '2' => "South",
+            '3' => "West",
+            '4' => "North",
+            '5' => "White Dragon",
+            '6' => "Green Dragon",
+            '7' => "Red Dragon",
+            _ => rank.ToString()
+        };
     }
 
     /// <summary>
@@ -272,10 +322,10 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     {
         return type switch
         {
-            MahjongMeldType.Sequence => "顺子",
-            MahjongMeldType.Triplet => "刻子",
-            MahjongMeldType.Quad => "杠子",
-            _ => "未知"
+            MahjongMeldType.Sequence => "Sequence",
+            MahjongMeldType.Triplet => "Triplet",
+            MahjongMeldType.Quad => "Quad",
+            _ => "Unknown"
         };
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MahjongPoints.Models;
@@ -18,6 +19,26 @@ public sealed class DefaultYakuDetector : IYakuDetector
         1,
         "All tiles are suited tiles from 2 through 8.");
 
+    private static readonly IReadOnlyDictionary<string, MahjongYaku> _dragonYakus =
+        new Dictionary<string, MahjongYaku>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["5z"] = new(
+                "yakuhai-white-dragon",
+                "役牌（白板）",
+                1,
+                "白板刻子。"),
+            ["6z"] = new(
+                "yakuhai-green-dragon",
+                "役牌（发）",
+                1,
+                "发财刻子。"),
+            ["7z"] = new(
+                "yakuhai-red-dragon",
+                "役牌（中）",
+                1,
+                "红中刻子。")
+        };
+
     /// <summary>
     /// 根据完整手牌和拆牌结果检测满足的役种。
     /// </summary>
@@ -31,13 +52,41 @@ public sealed class DefaultYakuDetector : IYakuDetector
         MahjongScoringContext context)
     {
         var yakus = new List<MahjongYaku>();
+        var selectedSplit = splits.FirstOrDefault();
 
         if (splits.Count > 0 && IsTanyao(tiles))
         {
             yakus.Add(_duanyao);
         }
 
-        return new YakuDetectionResult(yakus, splits.FirstOrDefault());
+        if (selectedSplit is not null)
+        {
+            yakus.AddRange(DetectDragonYakuhai(selectedSplit));
+        }
+
+        return new YakuDetectionResult(yakus, selectedSplit);
+    }
+
+    private static IEnumerable<MahjongYaku> DetectDragonYakuhai(MahjongHandSplit split)
+    {
+        foreach (var meld in split.Melds)
+        {
+            if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad) || meld.Tiles.Count == 0)
+            {
+                continue;
+            }
+
+            var code = meld.Tiles[0].Code;
+            if (!meld.Tiles.All(tile => string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            if (_dragonYakus.TryGetValue(code, out var yaku))
+            {
+                yield return yaku;
+            }
+        }
     }
 
     /// <summary>
