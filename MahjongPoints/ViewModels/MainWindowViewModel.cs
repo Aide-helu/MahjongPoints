@@ -256,13 +256,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <returns>如果该属性会影响算点结果，则返回 <c>true</c>。</returns>
     private static bool IsScoringInputProperty(string? propertyName)
     {
+        //类似多个 "||"的写法
         return propertyName is null
             or nameof(MahjongScoringContext.WinningTile)
             or nameof(MahjongScoringContext.IsParent)
             or nameof(MahjongScoringContext.IsRiichi)
+            or nameof(MahjongScoringContext.IsDoubleRiichi)
             or nameof(MahjongScoringContext.IsOpenHand)
             or nameof(MahjongScoringContext.IsIppatsu)
             or nameof(MahjongScoringContext.IsTsumo)
+            or nameof(MahjongScoringContext.IsSelfWind)
+            or nameof(MahjongScoringContext.IsLocalWind)
+            or nameof(MahjongScoringContext.IsHaiDi)
+            or nameof(MahjongScoringContext.IsHeDi)
+            or nameof(MahjongScoringContext.IsRobKong)
+            or nameof(MahjongScoringContext.IsRidgeBlossom)
             or nameof(MahjongScoringContext.RiichiSticks);
     }
 
