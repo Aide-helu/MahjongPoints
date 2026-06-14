@@ -383,12 +383,27 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
     }
 
-    
-    
-    
-    
-    
-    
+    /// <summary>
+    /// 判断是否是一杯口
+    /// </summary>
+    /// <param name="split"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static bool IsYiBeiKou(MahjongHandSplit split, MahjongScoringContext context)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是平和
+    /// </summary>
+    /// <param name="split"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static bool IsPingHu(MahjongHandSplit split, MahjongScoringContext context)
+    {
+        return false;
+    }
     
     /// <summary>
     /// 判断是否是断幺
@@ -413,6 +428,155 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
         return true;
     }
+    
+    /// <summary>
+    /// 判断是否是三色同刻
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsSanSeTongKe(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是混全带幺九
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsHunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是一气通贯
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsYiQiTongGuan(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是三色同顺
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsSanSeTongShun(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是对对和
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsDuiDuiHe(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是三暗刻
+    /// </summary>
+    /// <param name="split"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static bool IsSanAnKe(MahjongHandSplit split, MahjongScoringContext context)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是三杠子
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsSanGangZi(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    
+    /// <summary>
+    /// 判断是否是小三元
+    /// </summary>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsXiaoSanYuan(MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是混老头
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsHunLaoTou(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是七对子
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongScoringContext context)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是清一色
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <returns></returns>
+    private static bool IsQingYiSe(IEnumerable<RecognizedMahjongTile> tiles)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是二杯口
+    /// </summary>
+    /// <param name="split"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static bool IsErBeiKou(MahjongHandSplit split, MahjongScoringContext context)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是纯全带幺九
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool IsChunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    {
+        return false;
+    }
+
+    /// <summary>
+    /// 判断是否是混一色
+    /// </summary>
+    /// <param name="tiles"></param>
+    /// <returns></returns>
+    private static bool IsHunYiSe(IEnumerable<RecognizedMahjongTile> tiles)
+    {
+        return false;
+    }
+    
+
     
     
     
