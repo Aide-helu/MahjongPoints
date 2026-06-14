@@ -15,7 +15,7 @@ public interface IYakuDetector
     /// <param name="splits">手牌拆解结果列表。</param>
     /// <param name="context">算点上下文。</param>
     /// <returns>役种检测结果。</returns>
-    YakuDetectionResult Detect(
+    IReadOnlyList<YakuDetectionResult> Detect(
         IReadOnlyList<RecognizedMahjongTile> tiles,
         IReadOnlyList<MahjongHandSplit> splits,
         MahjongScoringContext context);
