@@ -25,7 +25,7 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
         new("8s", "八条", 0.95),
         new("5z", "白板", 0.95),
         new("5z", "白板", 0.94),
-        new("5z", "白板", 0.94),
+        new("1z", "东风", 0.94),
         new("1z", "东风", 0.93),
         new("1z", "东风", 0.98)
     ];

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.JavaScript;
 using MahjongPoints.Models;
 
 namespace MahjongPoints.Services.Scoring;
@@ -185,17 +186,25 @@ public sealed class DefaultYakuDetector : IYakuDetector
             
             //通过用户context直接添加不需要判断的役
             Global(yakus, context);
-            
+
             //判断役牌三元牌
             if (IsYiPaiSanYuanPai(tiles, split))
             {
-                
+                var sanYuanPais = DetectSanYuanPai(split); 
+                foreach (var sanYuanPai in sanYuanPais)
+                {
+                    yakus.Add(sanYuanPai);
+                }
             }
             
             //判断役牌风牌
             if (IsYiPaiFengPai(tiles, split))
             {
-                
+                var FengPais = DetectFengPai(split,context); 
+                foreach (var FengPai in FengPais)
+                {
+                    yakus.Add(FengPai);
+                }
             }
             
             
@@ -305,21 +314,16 @@ public sealed class DefaultYakuDetector : IYakuDetector
     {
         foreach (var meld in split.Melds)
         {
-            if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad) || meld.Tiles.Count == 0)
-            {
-                continue;
-            }
+            if(meld.Type is MahjongMeldType.Sequence)continue;
 
-            var code = meld.Tiles[0].Code;
-            if (!meld.Tiles.All(tile => string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase)))
+            if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
-                continue;
+                if (_sanyuanpai.TryGetValue(meld.DisplayText,out var yaku))
+                {
+                    yield return yaku;
+                }
             }
-
-            if (_sanyuanpai.TryGetValue(code, out var yaku))
-            {
-                yield return yaku;
-            }
+           
         }
     }
 
@@ -336,7 +340,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
         foreach (var meld in split.Melds)
         {
             if(meld.Type is MahjongMeldType.Sequence)continue;
-            if (meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad)
+            if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
                 //判断这是不是风牌
                 if (meld.Tiles[0].Code is "1z" or "2z" or "3z" or "4z")
@@ -352,25 +356,30 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// </summary>
     /// <param name="split"></param>
     /// <returns></returns>
-    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplit split)
+    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplit split,MahjongScoringContext content)
     {
         foreach (var meld in split.Melds)
         {
-            if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad) || meld.Tiles.Count == 0)
-            {
-                continue;
-            }
+            
+            if(meld.Type is MahjongMeldType.Sequence)continue;
 
-            var code = meld.Tiles[0].Code;
-            if (!meld.Tiles.All(tile => string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase)))
+            if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
-                continue;
-            }
+                //风牌役种需要联系上下文
+                if (_fengpai.TryGetValue(meld.DisplayText,out var yaku))
+                {
+                    if (content.IsSelfWind)
+                    {
+                        yield return yaku;
+                    }
 
-            if (_sanyuanpai.TryGetValue(code, out var yaku))
-            {
-                yield return yaku;
+                    if (content.IsLocalWind)
+                    {
+                        yield return yaku;
+                    }
+                }
             }
+           
         }
     }
 
