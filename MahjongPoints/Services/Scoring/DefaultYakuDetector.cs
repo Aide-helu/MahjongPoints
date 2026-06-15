@@ -187,6 +187,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
             //通过用户context直接添加不需要判断的役
             Global(yakus, context);
 
+            //判断是不是七对子
+            if (IsQiDuiZi(tiles, split))
+            {
+                yakus.Add(_qiduizi);
+            }
+            
             //判断役牌三元牌
             if (IsYiPaiSanYuanPai(tiles, split))
             {
@@ -209,7 +215,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
             
             
             //判断断幺
-            if (IsDuanYao(tiles,split))
+            if (IsDuanYao(tiles))
             {
                 yakus.Add(_duanyao);
             }
@@ -391,6 +397,22 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <returns></returns>
     private static bool IsYiBeiKou(MahjongHandSplit split, MahjongScoringContext context)
     {
+        //门请前提
+        if (context.IsMenzen)
+        {
+            //搭子记录器
+            var meldDictionary =new Dictionary<string, int>();
+            //遍历四个搭子
+            foreach (var meld in split.Melds)
+            {
+                if (meld.Type is MahjongMeldType.Sequence)
+                {
+                    meldDictionary[meld.DisplayText] = meldDictionary.GetValueOrDefault(meld.DisplayText) + 1;
+                }
+            }
+            //统计Value值为2的个数==1 返回true
+            return meldDictionary.Count(v => v.Value == 2) == 1;
+        }
         return false;
     }
 
@@ -402,6 +424,17 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <returns></returns>
     private static bool IsPingHu(MahjongHandSplit split, MahjongScoringContext context)
     {
+        //门前请限定
+        if (context.IsMenzen)
+        {
+            //先判断是不是四顺子
+            var melds= split.Melds;
+            if (melds.Count(meld => meld.Type == MahjongMeldType.Sequence) != 4) return false;
+
+            //遍历每一个顺子
+            return melds.Any(meld => meld.Tiles[0].Equals(context.WinningTile) || meld.Tiles[2].Equals(context.WinningTile));
+
+        }
         return false;
     }
     
@@ -411,20 +444,16 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <param name="tiles">待检查的牌列表。</param>
     /// <param name="split">分割序列。</param>
     /// <returns>如果满足断幺九条件，则返回 <c>true</c>。</returns>
-    private static bool IsDuanYao(IEnumerable<RecognizedMahjongTile> tiles,MahjongHandSplit split)
+    private static bool IsDuanYao(IEnumerable<RecognizedMahjongTile> tiles)
     {
+        //遍历每一张牌即可，可复合除役满所有牌
         foreach (var tile in tiles)
         {
-            if (tile.Code.Length != 2 || !char.IsDigit(tile.Code[0]))
-            {
-                return false;
-            }
+            //如果某个编码是字牌直接返回
+            if (tile.Code[1].Equals('z')) return false;
 
-            var value = tile.Code[0] - '0';
-            if (value is < 2 or > 8)
-            {
-                return false;
-            }
+            //如果某张数牌是1或9直接返回
+            if (tile.Code[0] - '0' is 1 or 9) return false;
         }
         return true;
     }
@@ -527,10 +556,14 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是七对子
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="context"></param>
+    /// <param name="split"></param>
     /// <returns></returns>
-    private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongScoringContext context)
+    private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
     {
+        if (split.Shape is MahjongHandShape.SevenPairs)
+        {
+            return true;
+        }
         return false;
     }
 
