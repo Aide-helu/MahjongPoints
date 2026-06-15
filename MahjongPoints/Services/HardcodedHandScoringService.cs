@@ -156,6 +156,20 @@ public sealed class HardcodedHandScoringService : IHandScoringService
             var orderedMelds = OrderMelds(split.Melds).ToArray();
 
             Console.WriteLine($" Split {splitIndex + 1:D2}/{orderedSplits.Length:D2}");
+
+            if (split.Shape == MahjongHandShape.SevenPairs)
+            {
+                Console.WriteLine("   Shape : Seven pairs");
+                Console.WriteLine($"   Pairs : {string.Join(" | ", split.Pairs.Select(pair => $"{FormatTile(pair)}  {FormatTile(pair)}"))}");
+
+                if (splitIndex < orderedSplits.Length - 1)
+                {
+                    Console.WriteLine("----------------------------------------------------------------------");
+                }
+
+                continue;
+            }
+
             Console.WriteLine($"   Pair  : {FormatTile(split.Pair)}  {FormatTile(split.Pair)}");
             Console.WriteLine("   Melds :");
 
@@ -186,7 +200,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     private static IEnumerable<MahjongHandSplit> OrderHandSplits(IEnumerable<MahjongHandSplit> splits)
     {
         return splits
-            .OrderBy(split => GetTileSortKey(split.Pair.Code), StringComparer.Ordinal)
+            .OrderBy(split => split.Shape)
+            .ThenBy(split => GetTileSortKey(split.Pair.Code), StringComparer.Ordinal)
             .ThenBy(split => string.Join("|", OrderMelds(split.Melds).Select(GetMeldSortKey)), StringComparer.Ordinal);
     }
 

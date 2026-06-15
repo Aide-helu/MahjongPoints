@@ -39,6 +39,12 @@ public sealed class DefaultHandSplitter : IHandSplitter
 
         var results = new List<MahjongHandSplit>();
 
+        //优先进行七对子分割。
+        if (SevenPairsSplit(counts, tileByCode, out var sevenPairsSplit))
+        {
+            results.Add(sevenPairsSplit);
+            return results;
+        }
         
         //这个循环尝试选择出总数大于等于2的Key
         foreach (var pairCode in counts.Where(pair => pair.Value >= 2).Select(pair => pair.Key).ToArray())
@@ -62,6 +68,35 @@ public sealed class DefaultHandSplitter : IHandSplitter
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// 尝试创建七对子分割
+    /// </summary>
+    /// <param name="counts"></param>
+    /// <param name="tileByCode"></param>
+    /// <param name="split"></param>
+    /// <returns></returns>
+    private static bool SevenPairsSplit(
+        IReadOnlyDictionary<string, int> counts,
+        IReadOnlyDictionary<string, RecognizedMahjongTile> tileByCode,
+        out MahjongHandSplit split)
+    {
+        split = new MahjongHandSplit([], tileByCode.Values.First(), MahjongHandShape.SevenPairs, []);
+
+        if (counts.Count != 7 || counts.Values.Any(count => count != 2))
+        {
+            return false;
+        }
+
+        var pairs = counts
+            .Keys
+            .OrderBy(GetSortKey)
+            .Select(code => tileByCode[code])
+            .ToArray();
+
+        split = new MahjongHandSplit([], pairs[0], MahjongHandShape.SevenPairs, pairs);
+        return true;
     }
 
     
