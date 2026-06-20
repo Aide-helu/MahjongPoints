@@ -39,11 +39,10 @@ public sealed class DefaultHandSplitter : IHandSplitter
 
         var results = new List<MahjongHandSplit>();
 
-        //优先进行七对子分割。
+        //先加入七对子分割，但不提前返回；同一副牌可能也存在标准型拆法（例如二杯口）
         if (SevenPairsSplit(counts, tileByCode, out var sevenPairsSplit))
         {
             results.Add(sevenPairsSplit);
-            return results;
         }
         
         //这个循环尝试选择出总数大于等于2的Key

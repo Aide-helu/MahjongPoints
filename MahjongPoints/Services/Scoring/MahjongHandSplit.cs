@@ -6,8 +6,17 @@ namespace MahjongPoints.Services.Scoring;
 
 public enum MahjongHandShape
 {
+    /// <summary>
+    /// 普通型
+    /// </summary>
     Standard,
+    /// <summary>
+    /// 七对子
+    /// </summary>
     SevenPairs,
+    /// <summary>
+    /// 役满
+    /// </summary>
     YaKuMan
 }
 

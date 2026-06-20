@@ -30,9 +30,11 @@ public enum MahjongMeldType
 /// </summary>
 /// <param name="Type">面子类型。</param>
 /// <param name="Tiles">组成面子的牌列表。</param>
+/// <param name="IsOpen">是否为明面子。</param>
 public sealed record MahjongMeld(
     MahjongMeldType Type,
-    IReadOnlyList<RecognizedMahjongTile> Tiles)
+    IReadOnlyList<RecognizedMahjongTile> Tiles,
+    bool IsOpen = false)
 {
     /// <summary>
     /// 供界面展示的面子文本。
