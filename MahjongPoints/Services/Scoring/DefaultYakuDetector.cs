@@ -544,6 +544,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
             }
 
             //两面听只可能是顺子的两端胡牌；中间张是嵌张，直接排除
+            var hasTwoSidedWait = false;
             foreach (var meld in melds)
             {
                 var firstCode = meld.Tiles[0].Code;
@@ -552,17 +553,23 @@ public sealed class DefaultYakuDetector : IYakuDetector
                 if (string.Equals(context.WinningTile.Code, firstCode, StringComparison.OrdinalIgnoreCase))
                 {
                     // 7-8-9 胡 7 是边张，不算两面听
-                    return firstCode[0] != '7';
+                    if (firstCode[0] != '7')
+                    {
+                        hasTwoSidedWait = true;
+                    }
                 }
 
                 if (string.Equals(context.WinningTile.Code, lastCode, StringComparison.OrdinalIgnoreCase))
                 {
                     // 1-2-3 胡 3 是边张，不算两面听
-                    return firstCode[0] != '1';
+                    if (firstCode[0] != '1')
+                    {
+                        hasTwoSidedWait = true;
+                    }
                 }
             }
 
-            return false;
+            return hasTwoSidedWait;
 
         }
         return false;
@@ -818,6 +825,13 @@ public sealed class DefaultYakuDetector : IYakuDetector
             return false;
         }
 
+        var winningCode = context.WinningTile.Code;
+        var canAssignWinningTileOutsideTriplet =
+            string.Equals(split.Pair.Code, winningCode, StringComparison.OrdinalIgnoreCase) ||
+            split.Melds.Any(meld =>
+                meld.Type == MahjongMeldType.Sequence &&
+                meld.Tiles.Any(tile => string.Equals(tile.Code, winningCode, StringComparison.OrdinalIgnoreCase)));
+
         //记录暗刻数量
         var concealedTripletCount = 0;
         foreach (var meld in split.Melds)
@@ -836,9 +850,10 @@ public sealed class DefaultYakuDetector : IYakuDetector
 
             //不是自摸，并且荣和牌在当前刻子/杠子里，则该组不算暗刻
             if (!context.IsTsumo &&
-                context.WinningTile.Code != "unknown" &&
+                winningCode != "unknown" &&
+                !canAssignWinningTileOutsideTriplet &&
                 meld.Tiles.Any(meldTile =>
-                    string.Equals(meldTile.Code, context.WinningTile.Code, StringComparison.OrdinalIgnoreCase)))
+                    string.Equals(meldTile.Code, winningCode, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
