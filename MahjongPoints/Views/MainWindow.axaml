@@ -70,7 +70,8 @@
                         <StackPanel Spacing="6">
                             <TextBlock Text="{Binding ScoreSummary}"
                                        FontSize="20"
-                                       FontWeight="SemiBold"/>
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding WinningTileText}"
                                        Foreground="#027A48"
                                        TextWrapping="Wrap"/>
@@ -201,6 +202,11 @@
                                    FontSize="16"
                                    FontWeight="SemiBold"/>
                         <ItemsControl ItemsSource="{Binding ScoreItems}">
+                            <ItemsControl.Styles>
+                                <Style Selector="ContentPresenter">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                </Style>
+                            </ItemsControl.Styles>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,8"
@@ -208,10 +214,12 @@
                                             BorderBrush="#D0D5DD"
                                             BorderThickness="1"
                                             Background="White"
-                                            CornerRadius="4">
+                                            CornerRadius="4"
+                                            HorizontalAlignment="Stretch">
                                         <StackPanel Spacing="3">
                                             <TextBlock Text="{Binding Name}"
-                                                       FontWeight="SemiBold"/>
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding Description}"
                                                        Foreground="#555"
                                                        TextWrapping="Wrap"/>
