@@ -242,6 +242,11 @@ public sealed class MahjongScoringContext : ObservableObject
     /// 可收入的立直棒数量。
     /// </summary>
     private int _riichiSticks;
+
+    /// <summary>
+    /// 用户确认过副露状态的指定拆牌结果；为空时由算点服务自行拆牌。
+    /// </summary>
+    private MahjongHandSplitResult? _selectedSplit;
     
     /// <summary>
     /// 用户选择的胡牌张。
@@ -259,6 +264,15 @@ public sealed class MahjongScoringContext : ObservableObject
     {
         get => _riichiSticks;
         set => SetProperty(ref _riichiSticks, value);
+    }
+
+    /// <summary>
+    /// 用户确认过副露状态的指定拆牌结果。
+    /// </summary>
+    public MahjongHandSplitResult? SelectedSplit
+    {
+        get => _selectedSplit;
+        set => SetProperty(ref _selectedSplit, value);
     }
     
     /// <summary>

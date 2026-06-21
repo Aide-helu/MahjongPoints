@@ -115,6 +115,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public MahjongScoringContext ScoringContext { get; } = new();
 
     /// <summary>
+    /// 请求界面弹出副露面子选择窗口。
+    /// </summary>
+    public event EventHandler? OpenMeldSelectionRequested;
+
+    /// <summary>
     /// 界面展示的算点选项集合。
     /// </summary>
     public ObservableCollection<MahjongScoringOptionItem> ScoringOptionItems { get; } = [];
@@ -291,6 +296,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (string.Equals(e.PropertyName, nameof(MahjongScoringContext.IsOpenHand), StringComparison.Ordinal))
+        {
+            if (ScoringContext.IsOpenHand &&
+                RecognizedTiles.Count > 0 &&
+                OpenMeldSelectionRequested is not null)
+            {
+                OpenMeldSelectionRequested.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            if (!ScoringContext.IsOpenHand)
+            {
+                ScoringContext.SelectedSplit = null;
+            }
+        }
+
         if (string.Equals(e.PropertyName, nameof(MahjongScoringContext.WinningTile), StringComparison.Ordinal))
         {
             RefreshWinningTileText();
@@ -326,6 +347,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             or nameof(MahjongScoringContext.IsHeDi)
             or nameof(MahjongScoringContext.IsRobKong)
             or nameof(MahjongScoringContext.IsRidgeBlossom)
+            or nameof(MahjongScoringContext.SelectedSplit)
             or nameof(MahjongScoringContext.RiichiSticks);
     }
 
@@ -371,6 +393,43 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
+    /// 根据当前识别牌创建副露面子选择弹窗视图模型。
+    /// </summary>
+    /// <returns>副露面子选择弹窗视图模型。</returns>
+    public OpenMeldSelectionViewModel CreateOpenMeldSelectionViewModel()
+    {
+        var splitter = new DefaultHandSplitter();
+        var splits = splitter.Split(new List<RecognizedMahjongTile>(RecognizedTiles));
+        return new OpenMeldSelectionViewModel(splits);
+    }
+
+    /// <summary>
+    /// 应用用户在副露弹窗中确认的拆牌结果，并立即重新算点。
+    /// </summary>
+    /// <param name="selectedSplit">用户确认的拆牌结果。</param>
+    /// <returns>异步操作任务。</returns>
+    public void ApplyOpenMeldSelection(MahjongHandSplitResult selectedSplit)
+    {
+        ScoringContext.SelectedSplit = selectedSplit;
+    }
+
+    /// <summary>
+    /// 取消副露面子选择，同时取消“是否副露”选项。
+    /// </summary>
+    /// <returns>异步操作任务。</returns>
+    public async Task CancelOpenMeldSelectionAsync()
+    {
+        ScoringContext.SelectedSplit = null;
+        if (ScoringContext.IsOpenHand)
+        {
+            ScoringContext.IsOpenHand = false;
+            return;
+        }
+
+        await RecalculateCurrentHandAsync();
+    }
+
+    /// <summary>
     /// 根据当前上下文里的胡牌张刷新界面显示文本。
     /// </summary>
     private void RefreshWinningTileText()
@@ -412,6 +471,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecognizedTiles.Clear();
         CalculationTiles.Clear();
         ScoreItems.Clear();
+        ScoringContext.SelectedSplit = null;
         RecognitionSummary = "等待识别";
         ScoreSummary = "等待算点";
         WinningTileText = "胡牌张：未计算";
