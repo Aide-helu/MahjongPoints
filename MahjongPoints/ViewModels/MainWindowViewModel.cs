@@ -120,6 +120,61 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public ObservableCollection<MahjongScoringOptionItem> ScoringOptionItems { get; } = [];
 
     /// <summary>
+    /// 自风和场风下拉框共用的东南西北选项。
+    /// </summary>
+    public IReadOnlyList<MahjongWindOption> WindOptions { get; } = MahjongWindOption.All;
+
+    /// <summary>
+    /// 当前自风下拉框选中的选项。
+    /// </summary>
+    private MahjongWindOption _selectedSelfWindOption = MahjongWindOption.All[0];
+
+    /// <summary>
+    /// 当前场风下拉框选中的选项。
+    /// </summary>
+    private MahjongWindOption _selectedRoundWindOption = MahjongWindOption.All[0];
+
+    /// <summary>
+    /// 用户在界面选择的自风；变更后同步写入算点上下文。
+    /// </summary>
+    public MahjongWindOption SelectedSelfWindOption
+    {
+        get => _selectedSelfWindOption;
+        set
+        {
+            if (value is null || EqualityComparer<MahjongWindOption>.Default.Equals(_selectedSelfWindOption, value))
+            {
+                return;
+            }
+
+            if (SetProperty(ref _selectedSelfWindOption, value))
+            {
+                ScoringContext.SelfWind = value.Wind;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 用户在界面选择的场风；变更后同步写入算点上下文。
+    /// </summary>
+    public MahjongWindOption SelectedRoundWindOption
+    {
+        get => _selectedRoundWindOption;
+        set
+        {
+            if (value is null || EqualityComparer<MahjongWindOption>.Default.Equals(_selectedRoundWindOption, value))
+            {
+                return;
+            }
+
+            if (SetProperty(ref _selectedRoundWindOption, value))
+            {
+                ScoringContext.RoundWind = value.Wind;
+            }
+        }
+    }
+
+    /// <summary>
     /// 使用默认演示识别服务和默认演示算点服务创建主窗口视图模型。
     /// </summary>
     public MainWindowViewModel()
@@ -260,13 +315,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         return propertyName is null
             or nameof(MahjongScoringContext.WinningTile)
             or nameof(MahjongScoringContext.IsParent)
+            or nameof(MahjongScoringContext.SelfWind)
+            or nameof(MahjongScoringContext.RoundWind)
             or nameof(MahjongScoringContext.IsRiichi)
             or nameof(MahjongScoringContext.IsDoubleRiichi)
             or nameof(MahjongScoringContext.IsOpenHand)
             or nameof(MahjongScoringContext.IsIppatsu)
             or nameof(MahjongScoringContext.IsTsumo)
-            or nameof(MahjongScoringContext.IsSelfWind)
-            or nameof(MahjongScoringContext.IsLocalWind)
             or nameof(MahjongScoringContext.IsHaiDi)
             or nameof(MahjongScoringContext.IsHeDi)
             or nameof(MahjongScoringContext.IsRobKong)

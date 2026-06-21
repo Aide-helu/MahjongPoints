@@ -12,6 +12,7 @@ public sealed class MahjongScoringOptionItem : ObservableObject
 {
     private readonly MahjongScoringContext _context;
     private readonly PropertyInfo _property;
+    private bool _isUpdatingDisabledValue;
 
     private MahjongScoringOptionItem(
         MahjongScoringContext context,
@@ -30,11 +31,21 @@ public sealed class MahjongScoringOptionItem : ObservableObject
 
     public string DisplayName { get; }
 
+    /// <summary>
+    /// 当前选项是否允许用户勾选。
+    /// </summary>
+    public bool IsEnabled => CanEnableOption(Key, _context);
+
     public bool IsChecked
     {
         get => (bool)(_property.GetValue(_context) ?? false);
         set
         {
+            if (value && !IsEnabled)
+            {
+                return;
+            }
+
             if (IsChecked == value)
             {
                 return;
@@ -84,9 +95,89 @@ public sealed class MahjongScoringOptionItem : ObservableObject
 
     private void Context_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        RefreshAvailability();
+
         if (string.Equals(e.PropertyName, Key, StringComparison.Ordinal))
         {
             OnPropertyChanged(nameof(IsChecked));
         }
+    }
+
+    /// <summary>
+    /// 根据当前上下文刷新选项可用状态；如果选项变为不可用，会自动取消勾选。
+    /// </summary>
+    private void RefreshAvailability()
+    {
+        OnPropertyChanged(nameof(IsEnabled));
+
+        if (IsEnabled || !IsChecked || _isUpdatingDisabledValue)
+        {
+            return;
+        }
+
+        try
+        {
+            _isUpdatingDisabledValue = true;
+            _property.SetValue(_context, false);
+            OnPropertyChanged(nameof(IsChecked));
+        }
+        finally
+        {
+            _isUpdatingDisabledValue = false;
+        }
+    }
+
+    /// <summary>
+    /// 判断指定选项在当前算点上下文下是否可用。
+    /// </summary>
+    /// <param name="key">选项对应的上下文属性名。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果允许用户勾选该选项，则返回 <c>true</c>。</returns>
+    private static bool CanEnableOption(string key, MahjongScoringContext context)
+    {
+        return key switch
+        {
+            // 立直、双立直、一发都要求门前清；副露时不可选择。
+            nameof(MahjongScoringContext.IsRiichi) => context.IsMenzen && !context.IsDoubleRiichi,
+            nameof(MahjongScoringContext.IsDoubleRiichi) => context.IsMenzen && !context.IsRiichi,
+            nameof(MahjongScoringContext.IsIppatsu) => context.IsMenzen && (context.IsRiichi || context.IsDoubleRiichi),
+
+            // 已经选择立直相关状态后，副露不再可选。
+            nameof(MahjongScoringContext.IsOpenHand) =>
+                !context.IsRiichi &&
+                !context.IsDoubleRiichi &&
+                !context.IsIppatsu,
+
+            // 抢杠、河底是荣和语境；已经选择它们时，自摸不再可选。
+            nameof(MahjongScoringContext.IsTsumo) =>
+                !context.IsRobKong &&
+                !context.IsHeDi,
+
+            // 抢杠、河底是荣和语境；自摸时不可选择。
+            nameof(MahjongScoringContext.IsRobKong) =>
+                !context.IsTsumo &&
+                !context.IsRidgeBlossom &&
+                !context.IsHaiDi &&
+                !context.IsHeDi,
+            nameof(MahjongScoringContext.IsHeDi) =>
+                !context.IsTsumo &&
+                !context.IsRobKong &&
+                !context.IsRidgeBlossom &&
+                !context.IsHaiDi,
+
+            // 岭上开花和海底捞月是自摸语境，且与抢杠、河底互斥。
+            nameof(MahjongScoringContext.IsRidgeBlossom) =>
+                context.IsTsumo &&
+                !context.IsRobKong &&
+                !context.IsHeDi &&
+                !context.IsHaiDi,
+            nameof(MahjongScoringContext.IsHaiDi) =>
+                context.IsTsumo &&
+                !context.IsRobKong &&
+                !context.IsHeDi &&
+                !context.IsRidgeBlossom,
+
+            _ => true
+        };
     }
 }

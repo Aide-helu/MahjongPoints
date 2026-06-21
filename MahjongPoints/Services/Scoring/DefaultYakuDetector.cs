@@ -25,20 +25,17 @@ public sealed class DefaultYakuDetector : IYakuDetector
     };
 
     /// <summary>
-    /// 风牌役种
+    /// 自风刻子或杠子对应的役牌。
     /// </summary>
-    private static readonly IReadOnlyDictionary<string, MahjongYaku> _fengpai =
-        new Dictionary<string, MahjongYaku>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["1z 1z 1z"] = new("yipai-fengpai-dong", "役牌（东）", 1, "东风刻子。"),
-        ["2z 2z 2z"] = new("yipai-fengpai-nan","役牌（南）",1,"南风刻子"),
-        ["3z 3z 3z"] = new("yipai-fengpai-xi","役牌（西）",1,"西风刻子"),
-        ["4z 4z 4z"] = new("yipai-fengpai-bei","役牌（北）",1,"北风刻子")
-    };
-    
-    
-    
-    
+    private static readonly MahjongYaku _selfWindYaku =
+        new("yipai-self-wind", "役牌（自风）", 1, "自风牌刻子。");
+
+    /// <summary>
+    /// 场风刻子或杠子对应的役牌。
+    /// </summary>
+    private static readonly MahjongYaku _roundWindYaku =
+        new("yipai-round-wind", "役牌（场风）", 1, "场风牌刻子。");
+
     /// <summary>
     /// 一杯口：手牌中有两个完全相同的顺子（门清限定）
     /// </summary>
@@ -204,13 +201,10 @@ public sealed class DefaultYakuDetector : IYakuDetector
             }
             
             //判断役牌风牌
-            if (IsYiPaiFengPai(tiles, split))
+            var fengPais = DetectFengPai(split, context);
+            foreach (var fengPai in fengPais)
             {
-                var FengPais = DetectFengPai(split,context); 
-                foreach (var FengPai in FengPais)
-                {
-                    yakus.Add(FengPai);
-                }
+                yakus.Add(fengPai);
             }
             
             
@@ -425,57 +419,31 @@ public sealed class DefaultYakuDetector : IYakuDetector
 
 
     /// <summary>
-    /// 判断是否是风役牌
+    /// 根据当前自风、场风检测风牌役牌。
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
-    private static bool IsYiPaiFengPai(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
-    {
-        //找到刻子/杠子的面子
-        foreach (var meld in splitResult.Melds)
-        {
-            if(meld.Type is MahjongMeldType.Sequence)continue;
-            if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
-            {
-                //判断这是不是风牌
-                if (meld.Tiles[0].Code is "1z" or "2z" or "3z" or "4z")
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    /// <summary>
-    /// 检测是哪种风牌
-    /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
-    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplitResult splitResult,MahjongScoringContext content)
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">包含自风和场风选择的算点上下文。</param>
+    /// <returns>当前拆牌结果中成立的自风/场风役牌。</returns>
+    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         foreach (var meld in splitResult.Melds)
         {
-            
-            if(meld.Type is MahjongMeldType.Sequence)continue;
-
-            if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
+            if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
-                //风牌役种需要联系上下文
-                if (_fengpai.TryGetValue(meld.DisplayText,out var yaku))
-                {
-                    if (content.IsSelfWind)
-                    {
-                        yield return yaku;
-                    }
-
-                    if (content.IsLocalWind)
-                    {
-                        yield return yaku;
-                    }
-                }
+                continue;
             }
-           
+
+            var meldTileCode = meld.Tiles[0].Code;
+            // 同一风牌可以同时满足自风和场风，因此这里分别判断并分别返回。
+            if (string.Equals(meldTileCode, context.SelfWindTileCode, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return _selfWindYaku;
+            }
+
+            if (string.Equals(meldTileCode, context.RoundWindTileCode, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return _roundWindYaku;
+            }
         }
     }
 
@@ -535,9 +503,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
                     return false;
                 }
 
-                //当前上下文只记录雀头风牌是否属于自风/场风，未记录具体东南西北。
-                if (pairCode[0] is '1' or '2' or '3' or '4'
-                    && (context.IsSelfWind || context.IsLocalWind))
+                if (string.Equals(pairCode, context.SelfWindTileCode, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(pairCode, context.RoundWindTileCode, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }

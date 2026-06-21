@@ -39,14 +39,14 @@ public sealed class MahjongScoringContext : ObservableObject
     private bool _isTsumo;
 
     /// <summary>
-    /// 是否自风
+    /// 自风。
     /// </summary>
-    private bool _isSelfWind;
+    private MahjongWind _selfWind = MahjongWind.East;
 
     /// <summary>
-    /// 是否场风
+    /// 场风。
     /// </summary>
-    private bool _isLocalWind;
+    private MahjongWind _roundWind = MahjongWind.East;
 
     /// <summary>
     /// 是否海底捞月
@@ -69,7 +69,7 @@ public sealed class MahjongScoringContext : ObservableObject
     private bool _isRidgeBlossom;
 
     /// <summary>
-    /// 是否为亲家。
+    /// 是否为亲家。亲家由用户手动选择，不从自风推导。
     /// </summary>
     [MahjongScoringOption("是否亲家", 10)]
     public bool IsParent
@@ -135,19 +135,45 @@ public sealed class MahjongScoringContext : ObservableObject
         set => SetProperty(ref _isTsumo, value);
     }
     
-    [MahjongScoringOption("是否自风", 70)]
-    public bool IsSelfWind
+    /// <summary>
+    /// 用户选择的当前自风，用于判定役牌（自风）和平和雀头。
+    /// </summary>
+    public MahjongWind SelfWind
     {
-        get => _isSelfWind;
-        set => SetProperty(ref _isSelfWind, value);
+        get => _selfWind;
+        set
+        {
+            if (SetProperty(ref _selfWind, value))
+            {
+                OnPropertyChanged(nameof(SelfWindTileCode));
+            }
+        }
     }
-    
-    [MahjongScoringOption("是否场风", 80)]
-    public bool IsLocalWind
+
+    /// <summary>
+    /// 用户选择的当前场风，用于判定役牌（场风）和平和雀头。
+    /// </summary>
+    public MahjongWind RoundWind
     {
-        get => _isLocalWind;
-        set => SetProperty(ref _isLocalWind, value);
+        get => _roundWind;
+        set
+        {
+            if (SetProperty(ref _roundWind, value))
+            {
+                OnPropertyChanged(nameof(RoundWindTileCode));
+            }
+        }
     }
+
+    /// <summary>
+    /// 当前自风对应的实际风牌编码。
+    /// </summary>
+    public string SelfWindTileCode => SelfWind.ToTileCode();
+
+    /// <summary>
+    /// 当前场风对应的实际风牌编码。
+    /// </summary>
+    public string RoundWindTileCode => RoundWind.ToTileCode();
 
 
     [MahjongScoringOption("是否海底捞月", 90)]
