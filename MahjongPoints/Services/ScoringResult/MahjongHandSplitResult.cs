@@ -26,7 +26,7 @@ public enum MahjongHandShape
 /// <param name="Melds">拆出的面子列表。</param>
 /// <param name="Pair">雀头牌。</param>
 /// <param name="Shape">分割类型（默认Standard）</param>
-public sealed record MahjongHandSplit(
+public sealed record MahjongHandSplitResult(
     IReadOnlyList<MahjongMeld> Melds,
     RecognizedMahjongTile Pair,
     MahjongHandShape Shape = MahjongHandShape.Standard,

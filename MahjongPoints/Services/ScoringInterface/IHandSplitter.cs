@@ -13,5 +13,5 @@ public interface IHandSplitter
     /// </summary>
     /// <param name="tiles">参与拆解的完整牌列表。</param>
     /// <returns>所有可用的手牌拆解结果。</returns>
-    IReadOnlyList<MahjongHandSplit> Split(IReadOnlyList<RecognizedMahjongTile> tiles);
+    IReadOnlyList<MahjongHandSplitResult> Split(IReadOnlyList<RecognizedMahjongTile> tiles);
 }

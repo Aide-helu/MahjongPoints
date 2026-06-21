@@ -20,7 +20,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
     /// </summary>
     /// <param name="tiles">参与拆解的完整牌列表。</param>
     /// <returns>所有可用的手牌拆解结果。</returns>
-    public IReadOnlyList<MahjongHandSplit> Split(IReadOnlyList<RecognizedMahjongTile> tiles)
+    public IReadOnlyList<MahjongHandSplitResult> Split(IReadOnlyList<RecognizedMahjongTile> tiles)
     {
         if (tiles.Count != 14)
         {
@@ -37,7 +37,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
             .GroupBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
-        var results = new List<MahjongHandSplit>();
+        var results = new List<MahjongHandSplitResult>();
 
         //先加入七对子分割，但不提前返回；同一副牌可能也存在标准型拆法（例如二杯口）
         if (SevenPairsSplit(counts, tileByCode, out var sevenPairsSplit))
@@ -61,7 +61,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
                 //凑齐了四个面子
                 if (melds.Count == 4)
                 {
-                    results.Add(new MahjongHandSplit(melds, tileByCode[pairCode]));
+                    results.Add(new MahjongHandSplitResult(melds, tileByCode[pairCode]));
                 }
             }
         }
@@ -74,14 +74,14 @@ public sealed class DefaultHandSplitter : IHandSplitter
     /// </summary>
     /// <param name="counts"></param>
     /// <param name="tileByCode"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
     private static bool SevenPairsSplit(
         IReadOnlyDictionary<string, int> counts,
         IReadOnlyDictionary<string, RecognizedMahjongTile> tileByCode,
-        out MahjongHandSplit split)
+        out MahjongHandSplitResult splitResult)
     {
-        split = new MahjongHandSplit([], tileByCode.Values.First(), MahjongHandShape.SevenPairs, []);
+        splitResult = new MahjongHandSplitResult([], tileByCode.Values.First(), MahjongHandShape.SevenPairs, []);
 
         if (counts.Count != 7 || counts.Values.Any(count => count != 2))
         {
@@ -94,7 +94,7 @@ public sealed class DefaultHandSplitter : IHandSplitter
             .Select(code => tileByCode[code])
             .ToArray();
 
-        split = new MahjongHandSplit([], pairs[0], MahjongHandShape.SevenPairs, pairs);
+        splitResult = new MahjongHandSplitResult([], pairs[0], MahjongHandShape.SevenPairs, pairs);
         return true;
     }
 

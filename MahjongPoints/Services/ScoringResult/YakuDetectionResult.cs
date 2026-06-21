@@ -10,7 +10,7 @@ namespace MahjongPoints.Services.Scoring;
 /// <param name="SelectedSplit">用于判役的手牌拆解结果。</param>
 public sealed record YakuDetectionResult(
     IReadOnlyList<MahjongYaku> Yakus,
-    MahjongHandSplit? SelectedSplit)
+    MahjongHandSplitResult? SelectedSplit)
 {
     /// <summary>
     /// 检测到的役种总番数。

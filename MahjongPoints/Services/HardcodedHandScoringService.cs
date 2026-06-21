@@ -88,7 +88,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         
         //拆牌
         var splits = _handSplitter.Split(calculationTiles);
-        WriteHandSplitsToConsole(calculationTiles, winningTile, splits);
+        WriteHandSplitsToConsole(calculationTiles, winningTile, splits);//控制台输出不用管
 
         // 每一个分割的番
         var yakuResults = _yakuDetector.Detect(calculationTiles, splits, context);
@@ -120,6 +120,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         return Task.FromResult(result);
     }
 
+    #region 控制台输出及所有辅助函数
+    
     /// <summary>
     /// 把当前手牌拆解结果输出到控制台，方便先观察拆牌流程是否正确。
     /// </summary>
@@ -129,7 +131,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     private static void WriteHandSplitsToConsole(
         IReadOnlyList<RecognizedMahjongTile> calculationTiles,
         RecognizedMahjongTile winningTile,
-        IReadOnlyList<MahjongHandSplit> splits)
+        IReadOnlyList<MahjongHandSplitResult> splits)
     {
         var orderedSplits = OrderHandSplits(splits).ToArray();
 
@@ -197,7 +199,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// </summary>
     /// <param name="splits">拆牌器返回的所有拆解结果。</param>
     /// <returns>排序后的拆牌组合。</returns>
-    private static IEnumerable<MahjongHandSplit> OrderHandSplits(IEnumerable<MahjongHandSplit> splits)
+    private static IEnumerable<MahjongHandSplitResult> OrderHandSplits(IEnumerable<MahjongHandSplitResult> splits)
     {
         return splits
             .OrderBy(split => split.Shape)
@@ -240,15 +242,15 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// <summary>
     /// 把完整拆法格式化为一行控制台展示文本。
     /// </summary>
-    /// <param name="split">完整拆法。</param>
+    /// <param name="splitResult">完整拆法。</param>
     /// <param name="orderedMelds">已经排序后的面子列表。</param>
     /// <returns>格式化后的完整拆法文本。</returns>
     private static string FormatHandSplit(
-        MahjongHandSplit split,
+        MahjongHandSplitResult splitResult,
         IReadOnlyList<MahjongMeld> orderedMelds)
     {
         var meldParts = orderedMelds.Select(meld => $"[{GetMeldTypeName(meld.Type)} {FormatTiles(meld.Tiles)}]");
-        return string.Join(" + ", meldParts) + $" + [Pair {FormatTile(split.Pair)}  {FormatTile(split.Pair)}]";
+        return string.Join(" + ", meldParts) + $" + [Pair {FormatTile(splitResult.Pair)}  {FormatTile(splitResult.Pair)}]";
     }
 
     /// <summary>
@@ -348,4 +350,6 @@ public sealed class HardcodedHandScoringService : IHandScoringService
             _ => "Unknown"
         };
     }
+    
+    #endregion
 }

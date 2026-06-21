@@ -17,6 +17,6 @@ public interface IYakuDetector
     /// <returns>役种检测结果。</returns>
     IReadOnlyList<YakuDetectionResult> Detect(
         IReadOnlyList<RecognizedMahjongTile> tiles,
-        IReadOnlyList<MahjongHandSplit> splits,
+        IReadOnlyList<MahjongHandSplitResult> splits,
         MahjongScoringContext context);
 }

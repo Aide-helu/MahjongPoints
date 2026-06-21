@@ -11,4 +11,4 @@ namespace MahjongPoints.Services.Scoring;
 public sealed record FuCalculationResult(
     int Fu,
     IReadOnlyList<string> Breakdown,
-    MahjongHandSplit? SelectedSplit);
+    MahjongHandSplitResult? SelectedSplit);

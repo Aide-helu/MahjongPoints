@@ -174,7 +174,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <returns>役种检测结果。</returns>
     public IReadOnlyList<YakuDetectionResult> Detect(
         IReadOnlyList<RecognizedMahjongTile> tiles,
-        IReadOnlyList<MahjongHandSplit> splits,
+        IReadOnlyList<MahjongHandSplitResult> splits,
         MahjongScoringContext context)
     {
         
@@ -382,12 +382,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是三元役牌
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split">分割序列。</param>
+    /// <param name="splitResult">分割序列。</param>
     /// <returns></returns>
-    private static bool IsYiPaiSanYuanPai(IEnumerable<RecognizedMahjongTile> tiles,MahjongHandSplit split)
+    private static bool IsYiPaiSanYuanPai(IEnumerable<RecognizedMahjongTile> tiles,MahjongHandSplitResult splitResult)
     {
         //找到刻子/杠子的面子
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if(meld.Type is MahjongMeldType.Sequence)continue;
             if (meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad)
@@ -404,11 +404,11 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 检测是哪种三元牌
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static IEnumerable<MahjongYaku> DetectSanYuanPai(MahjongHandSplit split)
+    private static IEnumerable<MahjongYaku> DetectSanYuanPai(MahjongHandSplitResult splitResult)
     {
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if(meld.Type is MahjongMeldType.Sequence)continue;
 
@@ -428,12 +428,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是风役牌
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsYiPaiFengPai(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    private static bool IsYiPaiFengPai(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         //找到刻子/杠子的面子
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if(meld.Type is MahjongMeldType.Sequence)continue;
             if (meld.Type is (MahjongMeldType.Triplet or MahjongMeldType.Quad))
@@ -450,11 +450,11 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 检测是哪种风牌
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplit split,MahjongScoringContext content)
+    private static IEnumerable<MahjongYaku> DetectFengPai(MahjongHandSplitResult splitResult,MahjongScoringContext content)
     {
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             
             if(meld.Type is MahjongMeldType.Sequence)continue;
@@ -482,18 +482,18 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是一杯口
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    private static bool IsYiBeiKou(MahjongHandSplit split, MahjongScoringContext context)
+    private static bool IsYiBeiKou(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //一杯口只适用于门前清的标准型手牌
-        if (context.IsMenzen && split.Shape == MahjongHandShape.Standard)
+        if (context.IsMenzen && splitResult.Shape == MahjongHandShape.Standard)
         {
             //搭子记录器
             var meldDictionary =new Dictionary<string, int>();
             //遍历四个搭子
-            foreach (var meld in split.Melds)
+            foreach (var meld in splitResult.Melds)
             {
                 if (meld.Type is MahjongMeldType.Sequence)
                 {
@@ -509,16 +509,16 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是平和
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    private static bool IsPingHu(MahjongHandSplit split, MahjongScoringContext context)
+    private static bool IsPingHu(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //平和门前限定，并且只适用于标准型
-        if (context.IsMenzen && split.Shape == MahjongHandShape.Standard)
+        if (context.IsMenzen && splitResult.Shape == MahjongHandShape.Standard)
         {
             //先判断是不是四顺子
-            var melds = split.Melds;
+            var melds = splitResult.Melds;
             if (melds.Count(meld => meld.Type == MahjongMeldType.Sequence) != 4) return false;
 
             //面子中不能存在字牌；雀头可以是数牌或非役牌风牌。
@@ -527,7 +527,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
                 return false;
             }
 
-            var pairCode = split.Pair.Code;
+            var pairCode = splitResult.Pair.Code;
             if (pairCode.Length == 2 && pairCode[1] == 'z')
             {
                 if (pairCode[0] is '5' or '6' or '7')
@@ -598,19 +598,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三色同刻
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsSanSeTongKe(MahjongHandSplit split)
+    private static bool IsSanSeTongKe(MahjongHandSplitResult splitResult)
     {
         //三色同刻只适用于标准型；七对子等特殊形不能成立
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
         //按刻子/杠子的数字分组，记录该数字出现过哪些数牌花色
         var suitsByValue = new Dictionary<int, HashSet<char>>();
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
@@ -645,14 +645,14 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是混全带幺九
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsHunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    private static bool IsHunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         
         
         //不是普通型直接返回false，七对子不算混全
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
@@ -664,7 +664,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
         
         var hasSequence = false;
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             //至少有一个顺子
             if (meld.Type == MahjongMeldType.Sequence)
@@ -692,18 +692,18 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
 
         //至少一个顺子，并且每个面子都带幺九
-        return hasSequence && (split.Pair.Code[1] == 'z' || split.Pair.Code[0] is '1' or '9');
+        return hasSequence && (splitResult.Pair.Code[1] == 'z' || splitResult.Pair.Code[0] is '1' or '9');
     }
 
     /// <summary>
     /// 判断是否是一气通贯
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsYiQiTongGuan(MahjongHandSplit split)
+    private static bool IsYiQiTongGuan(MahjongHandSplitResult splitResult)
     {
         //不是普通型直接false
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
@@ -711,7 +711,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
         //
         var sequenceStartsBySuit = new Dictionary<char, HashSet<int>>();
         //
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             //不是顺子直接下一个面子
             if (meld.Type != MahjongMeldType.Sequence)
@@ -753,19 +753,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三色同顺
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsSanSeTongShun(MahjongHandSplit split)
+    private static bool IsSanSeTongShun(MahjongHandSplitResult splitResult)
     {
         //不是标准型直接false
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
         //与一气通贯同理，根据获取到的顺子作为Key：1234567，然后去搜索是否存在一个顺子有m p s
         var sequenceSuitsByStart = new Dictionary<int, HashSet<char>>();
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if (meld.Type != MahjongMeldType.Sequence)
             {
@@ -798,43 +798,43 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是对对和
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsDuiDuiHe(MahjongHandSplit split)
+    private static bool IsDuiDuiHe(MahjongHandSplitResult splitResult)
     {
 
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
-        return split.Melds.All(meld => meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad);
+        return splitResult.Melds.All(meld => meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad);
     }
 
     /// <summary>
     /// 判断是否是三暗刻
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    private static bool IsSanAnKe(MahjongHandSplit split, MahjongScoringContext context)
+    private static bool IsSanAnKe(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //不是标准型直接false
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
         var winningCode = context.WinningTile.Code;
         var canAssignWinningTileOutsideTriplet =
-            string.Equals(split.Pair.Code, winningCode, StringComparison.OrdinalIgnoreCase) ||
-            split.Melds.Any(meld =>
+            string.Equals(splitResult.Pair.Code, winningCode, StringComparison.OrdinalIgnoreCase) ||
+            splitResult.Melds.Any(meld =>
                 meld.Type == MahjongMeldType.Sequence &&
                 meld.Tiles.Any(tile => string.Equals(tile.Code, winningCode, StringComparison.OrdinalIgnoreCase)));
 
         //记录暗刻数量
         var concealedTripletCount = 0;
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             //不是刻子或杠子读下一个面子
             if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad))
@@ -867,33 +867,33 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三杠子
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsSanGangZi(MahjongHandSplit split)
+    private static bool IsSanGangZi(MahjongHandSplitResult splitResult)
     {
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
-        return split.Melds.Count(meld => meld.Type == MahjongMeldType.Quad) >= 3;
+        return splitResult.Melds.Count(meld => meld.Type == MahjongMeldType.Quad) >= 3;
     }
 
     /// <summary>
     /// 判断是否是小三元
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsXiaoSanYuan(MahjongHandSplit split)
+    private static bool IsXiaoSanYuan(MahjongHandSplitResult splitResult)
     {
         //小三元只适用于标准型：两组三元牌刻子/杠子 + 剩下一种三元牌作雀头
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
         var tripletDragonCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if (meld.Type is not (MahjongMeldType.Triplet or MahjongMeldType.Quad))
             {
@@ -914,20 +914,20 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
 
         // 第三种三元牌必须是雀头
-        return split.Pair.Code is "5z" or "6z" or "7z" &&
-               !tripletDragonCodes.Contains(split.Pair.Code);
+        return splitResult.Pair.Code is "5z" or "6z" or "7z" &&
+               !tripletDragonCodes.Contains(splitResult.Pair.Code);
     }
 
     /// <summary>
     /// 判断是否是混老头
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsHunLaoTou(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    private static bool IsHunLaoTou(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         //混老头可以是标准型或七对子；其他特殊形不处理
-        if (split.Shape is not (MahjongHandShape.Standard or MahjongHandShape.SevenPairs))
+        if (splitResult.Shape is not (MahjongHandShape.Standard or MahjongHandShape.SevenPairs))
         {
             return false;
         }
@@ -961,12 +961,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是七对子
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split, MahjongScoringContext context)
+    private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //七对子是门前限定；副露时不成立
-        if (!context.IsMenzen || split.Shape != MahjongHandShape.SevenPairs)
+        if (!context.IsMenzen || splitResult.Shape != MahjongHandShape.SevenPairs)
         {
             return false;
         }
@@ -1020,19 +1020,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是二杯口
     /// </summary>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    private static bool IsErBeiKou(MahjongHandSplit split, MahjongScoringContext context)
+    private static bool IsErBeiKou(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //二杯口门前限定，并且只适用于标准型
-        if (!context.IsMenzen || split.Shape != MahjongHandShape.Standard)
+        if (!context.IsMenzen || splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
 
         var sequenceCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if (meld.Type != MahjongMeldType.Sequence)
             {
@@ -1050,12 +1050,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是纯全带幺九
     /// </summary>
     /// <param name="tiles"></param>
-    /// <param name="split"></param>
+    /// <param name="splitResult"></param>
     /// <returns></returns>
-    private static bool IsChunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplit split)
+    private static bool IsChunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         //纯全带幺九只适用于标准型，且不能含字牌
-        if (split.Shape != MahjongHandShape.Standard)
+        if (splitResult.Shape != MahjongHandShape.Standard)
         {
             return false;
         }
@@ -1065,7 +1065,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
             return false;
         }
 
-        foreach (var meld in split.Melds)
+        foreach (var meld in splitResult.Melds)
         {
             if (meld.Type == MahjongMeldType.Sequence)
             {
@@ -1087,7 +1087,7 @@ public sealed class DefaultYakuDetector : IYakuDetector
         }
 
         //雀头也必须是1或9数牌
-        return split.Pair.Code[0] is '1' or '9';
+        return splitResult.Pair.Code[0] is '1' or '9';
     }
 
     /// <summary>
