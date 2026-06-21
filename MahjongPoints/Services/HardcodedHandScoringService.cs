@@ -87,19 +87,22 @@ public sealed class HardcodedHandScoringService : IHandScoringService
         // 四层算点流水线：先拆牌，再判役，再算符，最后把番符换算成点数。
         
         //拆牌
-        var splits = context.SelectedSplit is null
-            ? _handSplitter.Split(calculationTiles)
-            : [context.SelectedSplit];
+        var splits = ApplySelectedOpenMelds(
+            _handSplitter.Split(calculationTiles),
+            context.SelectedOpenMelds);
         WriteHandSplitsToConsole(calculationTiles, winningTile, splits);//控制台输出不用管
-
         if (splits.Count == 0)
         {
             var noSplitResult = new MahjongScoringResult(
                 calculationTiles,
                 winningTile,
                 false,
-                "No valid 4 melds + 1 pair split.",
-                "No valid hand split.",
+                context.SelectedOpenMelds.Count == 0
+                    ? "No valid 4 melds + 1 pair split."
+                    : "No split contains all selected open melds.",
+                context.SelectedOpenMelds.Count == 0
+                    ? "No valid hand split."
+                    : "No split contains all selected open melds.",
                 0,
                 0,
                 0,
@@ -110,6 +113,8 @@ public sealed class HardcodedHandScoringService : IHandScoringService
 
         // 每一个分割的番
         var yakuResults = _yakuDetector.Detect(calculationTiles, splits, context);
+       
+        // 计算每一个切割的符数
         var fuResult = _fuCalculator.Calculate(calculationTiles, yakuResults[0], context);
         var pointResult = _scoreCalculator.Calculate(yakuResults[0], fuResult, context);
 
@@ -137,6 +142,72 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     }
 
     #region 控制台输出及所有辅助函数
+
+    /// <summary>
+    /// 根据用户选择的副露面子过滤候选拆法，并把匹配到的面子标记为副露。
+    /// </summary>
+    /// <param name="splits">拆牌器枚举出的候选拆法。</param>
+    /// <param name="selectedOpenMelds">用户确认的副露面子。</param>
+    /// <returns>保留并标记副露后的拆法。</returns>
+    private static IReadOnlyList<MahjongHandSplitResult> ApplySelectedOpenMelds(
+        IReadOnlyList<MahjongHandSplitResult> splits,
+        IReadOnlyList<MahjongMeld> selectedOpenMelds)
+    {
+        if (selectedOpenMelds.Count == 0)
+        {
+            return splits;
+        }
+
+        var selectedKeys = selectedOpenMelds
+            .Select(GetMeldKey)
+            .GroupBy(key => key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+        var results = new List<MahjongHandSplitResult>();
+        foreach (var split in splits.Where(split => split.Shape == MahjongHandShape.Standard))
+        {
+            var remainingSelectedKeys = new Dictionary<string, int>(selectedKeys, StringComparer.OrdinalIgnoreCase);
+            var melds = new List<MahjongMeld>(split.Melds.Count);
+
+            foreach (var meld in split.Melds)
+            {
+                var meldKey = GetMeldKey(meld);
+                if (remainingSelectedKeys.TryGetValue(meldKey, out var remainingCount) && remainingCount > 0)
+                {
+                    melds.Add(meld with { IsOpen = true });
+                    if (remainingCount == 1)
+                    {
+                        remainingSelectedKeys.Remove(meldKey);
+                    }
+                    else
+                    {
+                        remainingSelectedKeys[meldKey] = remainingCount - 1;
+                    }
+
+                    continue;
+                }
+
+                melds.Add(meld);
+            }
+
+            if (remainingSelectedKeys.Count == 0)
+            {
+                results.Add(split with { Melds = melds });
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// 获取面子的匹配键，用于副露面子和拆牌结果之间做内容匹配。
+    /// </summary>
+    /// <param name="meld">面子。</param>
+    /// <returns>稳定匹配键。</returns>
+    private static string GetMeldKey(MahjongMeld meld)
+    {
+        return $"{meld.Type}:{string.Join(",", meld.Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
+    }
     
     /// <summary>
     /// 把当前手牌拆解结果输出到控制台，方便先观察拆牌流程是否正确。

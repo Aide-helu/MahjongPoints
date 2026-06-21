@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -103,7 +104,7 @@ public partial class MainWindow : Window
         try
         {
             var dialogViewModel = viewModel.CreateOpenMeldSelectionViewModel();
-            if (dialogViewModel.SplitOptions.Count == 0)
+            if (dialogViewModel.MeldOptions.Count == 0)
             {
                 await viewModel.CancelOpenMeldSelectionAsync();
                 return;
@@ -114,14 +115,14 @@ public partial class MainWindow : Window
                 DataContext = dialogViewModel
             };
 
-            var selectedSplit = await dialog.ShowDialog<MahjongHandSplitResult?>(this);
-            if (selectedSplit is null)
+            var selectedOpenMelds = await dialog.ShowDialog<IReadOnlyList<MahjongMeld>?>(this);
+            if (selectedOpenMelds is null || selectedOpenMelds.Count == 0)
             {
                 await viewModel.CancelOpenMeldSelectionAsync();
                 return;
             }
 
-            viewModel.ApplyOpenMeldSelection(selectedSplit);
+            viewModel.ApplyOpenMeldSelection(selectedOpenMelds);
         }
         finally
         {

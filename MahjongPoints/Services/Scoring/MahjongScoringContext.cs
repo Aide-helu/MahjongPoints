@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MahjongPoints.Models;
 
@@ -244,9 +245,9 @@ public sealed class MahjongScoringContext : ObservableObject
     private int _riichiSticks;
 
     /// <summary>
-    /// 用户确认过副露状态的指定拆牌结果；为空时由算点服务自行拆牌。
+    /// 用户确认过的副露面子列表；为空时由算点服务自行使用全部拆牌结果。
     /// </summary>
-    private MahjongHandSplitResult? _selectedSplit;
+    private IReadOnlyList<MahjongMeld> _selectedOpenMelds = [];
     
     /// <summary>
     /// 用户选择的胡牌张。
@@ -267,12 +268,12 @@ public sealed class MahjongScoringContext : ObservableObject
     }
 
     /// <summary>
-    /// 用户确认过副露状态的指定拆牌结果。
+    /// 用户确认过的副露面子列表。
     /// </summary>
-    public MahjongHandSplitResult? SelectedSplit
+    public IReadOnlyList<MahjongMeld> SelectedOpenMelds
     {
-        get => _selectedSplit;
-        set => SetProperty(ref _selectedSplit, value);
+        get => _selectedOpenMelds;
+        set => SetProperty(ref _selectedOpenMelds, value ?? []);
     }
     
     /// <summary>

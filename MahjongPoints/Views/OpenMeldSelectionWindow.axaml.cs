@@ -21,7 +21,7 @@ public partial class OpenMeldSelectionWindow : Window
     {
         if (DataContext is OpenMeldSelectionViewModel viewModel)
         {
-            Close(viewModel.CreateSelectedSplit());
+            Close(viewModel.CreateSelectedOpenMelds());
             return;
         }
 

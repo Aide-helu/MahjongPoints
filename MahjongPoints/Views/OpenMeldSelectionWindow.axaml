@@ -2,9 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="MahjongPoints.Views.OpenMeldSelectionWindow"
         Title="选择副露面子"
-        Width="640"
+        Width="520"
         Height="420"
-        MinWidth="560"
+        MinWidth="420"
         MinHeight="360"
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,*,Auto" Margin="16" RowSpacing="12">
@@ -12,45 +12,24 @@
                    TextWrapping="Wrap"
                    Foreground="#555"/>
 
-        <Grid Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="12">
-            <Border BorderBrush="#D0D5DD"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Background="White">
-                <ListBox ItemsSource="{Binding SplitOptions}"
-                         SelectedItem="{Binding SelectedSplitOption, Mode=TwoWay}"
-                         BorderThickness="0">
-                    <ListBox.ItemTemplate>
+        <Border Grid.Row="1"
+                BorderBrush="#D0D5DD"
+                BorderThickness="1"
+                CornerRadius="4"
+                Background="White"
+                Padding="10">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding MeldOptions}">
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding DisplayText}"
-                                       TextWrapping="Wrap"
-                                       Margin="4"/>
+                            <CheckBox Content="{Binding DisplayText}"
+                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                      Margin="0,0,0,8"/>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Border>
-
-            <Border Grid.Column="1"
-                    BorderBrush="#D0D5DD"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Background="White"
-                    Padding="10">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="副露面子"
-                               FontWeight="SemiBold"/>
-                    <ItemsControl ItemsSource="{Binding SelectedSplitOption.MeldOptions}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding DisplayText}"
-                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                          Margin="0,0,0,8"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-        </Grid>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
 
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"

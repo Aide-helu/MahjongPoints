@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,37 +13,39 @@ namespace MahjongPoints.ViewModels;
 /// </summary>
 public sealed class OpenMeldSelectionViewModel : ObservableObject
 {
-    private OpenMeldSplitOption? _selectedSplitOption;
-
     /// <summary>
     /// 使用可选拆牌结果创建弹窗视图模型。
     /// </summary>
     /// <param name="splits">当前手牌的候选拆牌结果。</param>
     public OpenMeldSelectionViewModel(IEnumerable<MahjongHandSplitResult> splits)
     {
-        var index = 1;
-        foreach (var split in splits.Where(split => split.Shape == MahjongHandShape.Standard))
-        {
-            var option = new OpenMeldSplitOption(index, split);
-            foreach (var meldOption in option.MeldOptions)
-            {
-                meldOption.PropertyChanged += MeldOption_OnPropertyChanged;
-            }
+        var melds = splits
+            .Where(split => split.Shape == MahjongHandShape.Standard)
+            .SelectMany(split => split.Melds)
+            .GroupBy(GetMeldKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderBy(meld => meld.Type)
+            .ThenBy(GetMeldKey, StringComparer.Ordinal)
+            .ToArray();
 
-            SplitOptions.Add(option);
+        var index = 1;
+        foreach (var meld in melds)
+        {
+            var option = new OpenMeldOption(index, meld);
+            option.PropertyChanged += MeldOption_OnPropertyChanged;
+            MeldOptions.Add(option);
             index++;
         }
 
-        SelectedSplitOption = SplitOptions.FirstOrDefault();
-        Message = SplitOptions.Count == 0
-            ? "当前手牌没有可用于选择副露面子的标准拆法。"
-            : "选择一组拆法，然后勾选其中已经副露的面子。";
+        Message = MeldOptions.Count == 0
+            ? "当前手牌没有可选择的副露面子。"
+            : "勾选已经副露的面子。算点时只保留包含这些面子的拆法。";
     }
 
     /// <summary>
-    /// 当前手牌所有可供选择的标准拆法。
+    /// 当前手牌所有可供标记为副露的面子。
     /// </summary>
-    public ObservableCollection<OpenMeldSplitOption> SplitOptions { get; } = [];
+    public ObservableCollection<OpenMeldOption> MeldOptions { get; } = [];
 
     /// <summary>
     /// 弹窗顶部提示文本。
@@ -50,41 +53,20 @@ public sealed class OpenMeldSelectionViewModel : ObservableObject
     public string Message { get; }
 
     /// <summary>
-    /// 用户当前选中的拆法。
-    /// </summary>
-    public OpenMeldSplitOption? SelectedSplitOption
-    {
-        get => _selectedSplitOption;
-        set
-        {
-            if (SetProperty(ref _selectedSplitOption, value))
-            {
-                OnPropertyChanged(nameof(CanConfirm));
-            }
-        }
-    }
-
-    /// <summary>
     /// 是否已经选择至少一个副露面子，可以确认弹窗。
     /// </summary>
-    public bool CanConfirm => SelectedSplitOption?.MeldOptions.Any(option => option.IsSelected) == true;
+    public bool CanConfirm => MeldOptions.Any(option => option.IsSelected);
 
     /// <summary>
-    /// 创建用户确认后的拆牌结果，勾选的面子会被标记为副露。
+    /// 创建用户确认后的副露面子列表。
     /// </summary>
-    /// <returns>带有明暗面子状态的拆牌结果。</returns>
-    public MahjongHandSplitResult? CreateSelectedSplit()
+    /// <returns>带有副露标记的面子列表。</returns>
+    public IReadOnlyList<MahjongMeld> CreateSelectedOpenMelds()
     {
-        if (SelectedSplitOption is null || !CanConfirm)
-        {
-            return null;
-        }
-
-        var melds = SelectedSplitOption.MeldOptions
-            .Select(option => option.IsSelected ? option.Meld with { IsOpen = true } : option.Meld)
+        return MeldOptions
+            .Where(option => option.IsSelected)
+            .Select(option => option.Meld with { IsOpen = true })
             .ToArray();
-
-        return SelectedSplitOption.Split with { Melds = melds };
     }
 
     private void MeldOption_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -94,40 +76,11 @@ public sealed class OpenMeldSelectionViewModel : ObservableObject
             OnPropertyChanged(nameof(CanConfirm));
         }
     }
-}
 
-/// <summary>
-/// 弹窗中一组候选拆法。
-/// </summary>
-public sealed class OpenMeldSplitOption
-{
-    /// <summary>
-    /// 使用拆法创建候选项。
-    /// </summary>
-    /// <param name="index">拆法序号。</param>
-    /// <param name="split">拆牌结果。</param>
-    public OpenMeldSplitOption(int index, MahjongHandSplitResult split)
+    private static string GetMeldKey(MahjongMeld meld)
     {
-        Split = split;
-        DisplayText = $"拆法 {index}: {split.DisplayText}";
-        MeldOptions = new ObservableCollection<OpenMeldOption>(
-            split.Melds.Select((meld, meldIndex) => new OpenMeldOption(meldIndex + 1, meld)));
+        return $"{meld.Type}:{string.Join(",", meld.Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
     }
-
-    /// <summary>
-    /// 原始拆牌结果。
-    /// </summary>
-    public MahjongHandSplitResult Split { get; }
-
-    /// <summary>
-    /// 界面展示文本。
-    /// </summary>
-    public string DisplayText { get; }
-
-    /// <summary>
-    /// 当前拆法中的可选面子。
-    /// </summary>
-    public ObservableCollection<OpenMeldOption> MeldOptions { get; }
 }
 
 /// <summary>

@@ -308,7 +308,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             if (!ScoringContext.IsOpenHand)
             {
-                ScoringContext.SelectedSplit = null;
+                ScoringContext.SelectedOpenMelds = [];
             }
         }
 
@@ -347,7 +347,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             or nameof(MahjongScoringContext.IsHeDi)
             or nameof(MahjongScoringContext.IsRobKong)
             or nameof(MahjongScoringContext.IsRidgeBlossom)
-            or nameof(MahjongScoringContext.SelectedSplit)
+            or nameof(MahjongScoringContext.SelectedOpenMelds)
             or nameof(MahjongScoringContext.RiichiSticks);
     }
 
@@ -404,13 +404,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// 应用用户在副露弹窗中确认的拆牌结果，并立即重新算点。
+    /// 应用用户在副露弹窗中确认的副露面子，并立即重新算点。
     /// </summary>
-    /// <param name="selectedSplit">用户确认的拆牌结果。</param>
+    /// <param name="selectedOpenMelds">用户确认的副露面子列表。</param>
     /// <returns>异步操作任务。</returns>
-    public void ApplyOpenMeldSelection(MahjongHandSplitResult selectedSplit)
+    public void ApplyOpenMeldSelection(IReadOnlyList<MahjongMeld> selectedOpenMelds)
     {
-        ScoringContext.SelectedSplit = selectedSplit;
+        ScoringContext.SelectedOpenMelds = selectedOpenMelds;
     }
 
     /// <summary>
@@ -419,7 +419,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <returns>异步操作任务。</returns>
     public async Task CancelOpenMeldSelectionAsync()
     {
-        ScoringContext.SelectedSplit = null;
+        ScoringContext.SelectedOpenMelds = [];
         if (ScoringContext.IsOpenHand)
         {
             ScoringContext.IsOpenHand = false;
@@ -471,7 +471,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecognizedTiles.Clear();
         CalculationTiles.Clear();
         ScoreItems.Clear();
-        ScoringContext.SelectedSplit = null;
+        ScoringContext.SelectedOpenMelds = [];
         RecognitionSummary = "等待识别";
         ScoreSummary = "等待算点";
         WinningTileText = "胡牌张：未计算";
