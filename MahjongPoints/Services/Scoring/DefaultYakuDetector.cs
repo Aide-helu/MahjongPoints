@@ -100,12 +100,12 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 一气通贯：同花色完成123，456，789三组顺子
     /// </summary>
-    private static readonly MahjongYaku _yiqitongguan = new("yiqitongguan", "一气通贯", 1, "同花色123+456+789顺子");
+    private static readonly MahjongYaku _yiqitongguan = new("yiqitongguan", "一气通贯", 2, "同花色123+456+789顺子");
 
     /// <summary>
     /// 三色同顺：三种花色相同数字的顺子
     /// </summary>
-    private static readonly MahjongYaku _sansetongshun = new("sansetongshun", "三色同顺", 1, "三种花色相同数字顺子");
+    private static readonly MahjongYaku _sansetongshun = new("sansetongshun", "三色同顺", 2, "三种花色相同数字顺子");
 
     /// <summary>
     /// 对对和：手牌由四个刻子（杠子）和一对雀头组成
@@ -244,19 +244,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
             //判断混全带幺九；纯全带幺九或混老头成立时不重复计算混全带幺九
             if (!isChunQuanDaiYaoJiu && !isHunLaoTou && IsHunQuanDaiYaoJiu(tiles, split))
             {
-                yakus.Add(_hunquandaiyaojiu);
+                yakus.Add(ApplyOpenHandFan(_hunquandaiyaojiu, split, context, 1));
             }
 
             //判断一气通贯
             if (IsYiQiTongGuan(split))
             {
-                yakus.Add(_yiqitongguan);
+                yakus.Add(ApplyOpenHandFan(_yiqitongguan, split, context, 1));
             }
 
             //判断三色同顺
             if (IsSanSeTongShun(split))
             {
-                yakus.Add(_sansetongshun);
+                yakus.Add(ApplyOpenHandFan(_sansetongshun, split, context, 1));
             }
 
             //判断对对和
@@ -292,19 +292,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
             //判断清一色
             if (isQingYiSe)
             {
-                yakus.Add(_qingyise);
+                yakus.Add(ApplyOpenHandFan(_qingyise, split, context, 5));
             }
 
             //判断纯全带幺九
             if (isChunQuanDaiYaoJiu)
             {
-                yakus.Add(_chunquandaiyaojiu);
+                yakus.Add(ApplyOpenHandFan(_chunquandaiyaojiu, split, context, 2));
             }
 
             //判断混一色；清一色成立时不重复计算混一色
             if (!isQingYiSe && isHunYiSe)
             {
-                yakus.Add(_hunyise);
+                yakus.Add(ApplyOpenHandFan(_hunyise, split, context, 2));
             }
             
             
@@ -315,6 +315,26 @@ public sealed class DefaultYakuDetector : IYakuDetector
     }
 
 
+    /// <summary>
+    /// 对副露减番役应用副露后的番数。
+    /// </summary>
+    /// <param name="yaku">门前时的役种定义。</param>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">算点上下文。</param>
+    /// <param name="openFan">副露后的番数。</param>
+    /// <returns>按当前副露状态修正后的役种。</returns>
+    private static MahjongYaku ApplyOpenHandFan(
+        MahjongYaku yaku,
+        MahjongHandSplitResult splitResult,
+        MahjongScoringContext context,
+        int openFan)
+    {
+        if (!context.IsOpenHand)
+        {
+            return yaku;
+        }
+        return yaku with { Fan = openFan };
+    }
 
     /// <summary>
     /// 上下文通用役种
