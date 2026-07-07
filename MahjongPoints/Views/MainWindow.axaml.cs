@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using MahjongPoints.ViewModels;
 using MahjongPoints.Services.Scoring;
@@ -21,7 +22,7 @@ public partial class MainWindow : Window
     /// </summary>
     public MainWindow()
     {
-        InitializeComponent();
+        AvaloniaXamlLoader.Load(this);
     }
 
     /// <summary>

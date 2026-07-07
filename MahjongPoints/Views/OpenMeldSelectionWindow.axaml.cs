@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
 using MahjongPoints.ViewModels;
 
 namespace MahjongPoints.Views;
@@ -14,7 +15,7 @@ public partial class OpenMeldSelectionWindow : Window
     /// </summary>
     public OpenMeldSelectionWindow()
     {
-        InitializeComponent();
+        AvaloniaXamlLoader.Load(this);
     }
 
     private void ConfirmButton_OnClick(object? sender, RoutedEventArgs e)
