@@ -34,7 +34,7 @@ public partial class App : Application
             {
                 DataContext = new MainWindowViewModel(
                     new OnnxHandImageRecognizer(),
-                    new HardcodedHandScoringService()),
+                    new MahjongHandScoringService()),
             };
         }
 

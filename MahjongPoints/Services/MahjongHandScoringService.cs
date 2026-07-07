@@ -11,7 +11,7 @@ namespace MahjongPoints.Services;
 /// <summary>
 /// 演示用手牌算点服务，直接接收 14 张胡牌状态手牌并串联四层算点框架。
 /// </summary>
-public sealed class HardcodedHandScoringService : IHandScoringService
+public sealed class MahjongHandScoringService : IHandScoringService
 {
     /// <summary>
     /// 手牌拆解器。
@@ -36,7 +36,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// <summary>
     /// 使用默认四层算点组件创建演示算点服务。
     /// </summary>
-    public HardcodedHandScoringService()
+    public MahjongHandScoringService()
         : this(
             new DefaultHandSplitter(),
             new DefaultYakuDetector(),
@@ -52,7 +52,7 @@ public sealed class HardcodedHandScoringService : IHandScoringService
     /// <param name="yakuDetector">役种检测器。</param>
     /// <param name="fuCalculator">符数计算器。</param>
     /// <param name="scoreCalculator">点数计算器。</param>
-    public HardcodedHandScoringService(
+    public MahjongHandScoringService(
         IHandSplitter handSplitter,
         IYakuDetector yakuDetector,
         IFuCalculator fuCalculator,

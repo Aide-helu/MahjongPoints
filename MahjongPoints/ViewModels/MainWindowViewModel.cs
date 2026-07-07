@@ -50,7 +50,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// 界面顶部状态提示文本。
     /// </summary>
     [ObservableProperty]
-    private string _statusMessage = "请选择一张图片，demo 会返回固定的胡牌手牌并计算点数。";
+    private string _statusMessage = "请选择一张图片，模型会识别手牌并计算点数。";
 
     /// <summary>
     /// 手牌识别摘要。
@@ -183,7 +183,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// 使用默认演示识别服务和默认演示算点服务创建主窗口视图模型。
     /// </summary>
     public MainWindowViewModel()
-        : this(new HardcodedHandImageRecognizer(), new HardcodedHandScoringService())
+        : this(new OnnxHandImageRecognizer(), new MahjongHandScoringService())
     {
     }
 

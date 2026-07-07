@@ -21,8 +21,7 @@ MahjongPoints/
     |   |-- MahjongScoringResult.cs
     |   `-- RecognizedMahjongTile.cs
     |-- Services/
-    |   |-- HardcodedHandImageRecognizer.cs
-    |   |-- HardcodedHandScoringService.cs
+    |   |-- MahjongHandScoringService.cs
     |   |-- IHandImageRecognizer.cs
     |   |-- IHandScoringService.cs
     |   `-- OnnxHandImageRecognizer.cs
@@ -45,11 +44,11 @@ MahjongPoints/
 -> MainWindow.axaml.cs 接收文件选择结果
 -> MainWindowViewModel 加载图片预览
 -> IHandImageRecognizer 识别 13 张手牌
--> IHandScoringService 添加一张硬编码的和牌牌，并计算分数
+-> IHandScoringService 使用识别结果计算分数
 -> UI 展示图片、识别出的牌、参与计算的牌以及计分结果
 ```
 
-当前实现还没有真正运行 ONNX 模型。ONNX 集成被预留在 `IHandImageRecognizer` 接口后面，因此后续可以把硬编码识别器替换成真实的 ONNX 识别器，而不需要修改 UI 层。
+当前实现通过 `OnnxHandImageRecognizer` 直接运行项目内的 ONNX 模型。
 
 ## 根目录文件
 
@@ -104,17 +103,16 @@ Models 是纯数据结构，不应该依赖 Avalonia UI 类型。
 
 | 文件 | 用途 |
 | --- | --- |
-| `Services/IHandImageRecognizer.cs` | 图片识别接口。后续 ONNX 模型集成应实现该接口。 |
-| `Services/HardcodedHandImageRecognizer.cs` | 当前演示用识别器。它不真正读取图片内容，而是返回固定的 13 张手牌。 |
-| `Services/OnnxHandImageRecognizer.cs` | 为后续 ONNX 推理实现预留的占位类。 |
+| `Services/IHandImageRecognizer.cs` | 图片识别接口。 |
+| `Services/OnnxHandImageRecognizer.cs` | 使用项目内 ONNX 模型识别手牌。 |
 | `Services/IHandScoringService.cs` | 麻将计分接口。 |
-| `Services/HardcodedHandScoringService.cs` | 当前演示用计分服务。它添加一张硬编码的和牌牌，并返回固定的和牌结果。 |
+| `Services/MahjongHandScoringService.cs` | 麻将计分服务，串联拆牌、判役、算符和算点。 |
 
 服务接口让应用中的具体实现可以替换：
 
 ```text
-HardcodedHandImageRecognizer -> 后续替换为 OnnxHandImageRecognizer
-HardcodedHandScoringService  -> 后续替换为真实计分引擎
+OnnxHandImageRecognizer -> IHandImageRecognizer
+MahjongHandScoringService -> IHandScoringService
 ```
 
 ## Assets
