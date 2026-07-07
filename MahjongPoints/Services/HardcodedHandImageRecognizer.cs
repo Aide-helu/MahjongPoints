@@ -14,20 +14,21 @@ public sealed class HardcodedHandImageRecognizer : IHandImageRecognizer
     /// </summary>
     private static readonly RecognizedMahjongTile[] _demoTiles =
     [
-        new("2m", "二万", 0.99),
+        new("1m", "一万", 0.99),
+        new("2m", "二万", 0.98),
         new("3m", "三万", 0.98),
-        new("4m", "四万", 0.98),
-        new("2m", "二万", 0.99),
-        new("3m", "三万", 0.98),
-        new("4m", "四万", 0.98),
-        new("2m", "二万", 0.99),
-        new("3m", "三万", 0.98),
-        new("4m", "四万", 0.98),
-        new("5z", "白板", 0.95),
-        new("5z", "白板", 0.94),
-        new("1z", "东风", 0.94),
-        new("1z", "东风", 0.93),
-        new("1z", "东风", 0.98)
+        new("5m", "五万", 0.99),
+        new("5m", "五万", 0.98),
+        new("3p", "三筒", 0.98),
+        new("4p", "四筒", 0.99),
+        new("5p", "五筒", 0.98),
+        new("2s", "二条", 0.98),
+        new("3s", "三条", 0.98),
+        new("4s", "四条", 0.95),
+        new("5s", "五条", 0.94),
+        new("6s", "六条", 0.94),
+        new("7s", "七条", 0.93),
+        
     ];
 
     /// <summary>

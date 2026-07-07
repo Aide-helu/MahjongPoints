@@ -281,6 +281,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         ScoringContext.PropertyChanged -= ScoringContext_OnPropertyChanged;
+        if (_recognizer is IDisposable disposableRecognizer)
+        {
+            disposableRecognizer.Dispose();
+        }
+
         PreviewImage?.Dispose();
     }
 

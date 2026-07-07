@@ -1,7 +1,9 @@
-﻿using Avalonia;
+using Avalonia;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
+using MahjongPoints.Services;
 
 namespace MahjongPoints;
 
@@ -18,6 +20,10 @@ sealed class Program
     public static void Main(string[] args)
     {
         ConfigureConsoleOutputEncoding();
+        if (TryRunRecognitionCommand(args))
+        {
+            return;
+        }
 
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
@@ -36,6 +42,24 @@ sealed class Program
         {
             // 某些无控制台启动方式下无法设置输出编码，忽略后继续启动界面。
         }
+    }
+
+    private static bool TryRunRecognitionCommand(string[] args)
+    {
+        if (args.Length != 2 || !string.Equals(args[0], "--recognize", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        using var recognizer = new OnnxHandImageRecognizer();
+        var result = recognizer.RecognizeAsync(args[1]).GetAwaiter().GetResult();
+        Console.WriteLine(string.Join(" ", result.Tiles.Select(tile => tile.Code)));
+        foreach (var tile in result.Tiles)
+        {
+            Console.WriteLine($"{tile.Code} {tile.Confidence:F3}");
+        }
+
+        return true;
     }
 
     /// <summary>
