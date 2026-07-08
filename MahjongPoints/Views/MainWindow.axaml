@@ -24,6 +24,10 @@
                         Click="SelectImageButton_OnClick"
                         Padding="16,8"
                         Content="选择图片"/>
+                <Button x:Name="LoadClipboardImageButton"
+                        Click="LoadClipboardImageButton_OnClick"
+                        Padding="16,8"
+                        Content="从剪贴板加载"/>
                 <TextBlock Text="{Binding SelectedFileName}"
                            VerticalAlignment="Center"
                            Foreground="#444"/>

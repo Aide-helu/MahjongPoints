@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -92,6 +94,42 @@ public partial class MainWindow : Window
         }
 
         await viewModel.LoadAndRecognizeAsync(files[0].Path.LocalPath);
+    }
+
+    private async void LoadClipboardImageButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        var clipboard = Clipboard;
+        if (clipboard is null)
+        {
+            viewModel.StatusMessage = "当前窗口无法访问剪贴板。";
+            return;
+        }
+
+        try
+        {
+            using var bitmap = await clipboard.TryGetBitmapAsync();
+            if (bitmap is null)
+            {
+                viewModel.StatusMessage = "剪贴板里没有图片。";
+                return;
+            }
+
+            var tempImagePath = Path.Combine(
+                Path.GetTempPath(),
+                $"MahjongPointsClipboard_{DateTime.Now:yyyyMMddHHmmssfff}.png");
+            bitmap.Save(tempImagePath);
+
+            await viewModel.LoadAndRecognizeAsync(tempImagePath);
+        }
+        catch (Exception ex)
+        {
+            viewModel.StatusMessage = ex.Message;
+        }
     }
 
     private async void ViewModel_OpenMeldSelectionRequested(object? sender, EventArgs e)

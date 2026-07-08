@@ -113,14 +113,16 @@ public sealed class MahjongHandScoringService : IHandScoringService
 
         // 每一个分割的番
         var yakuResults = _yakuDetector.Detect(calculationTiles, splits, context);
+        var selectedYakuResult = yakuResults.FirstOrDefault(result =>
+            result.Yakus.Any(yaku => string.Equals(yaku.Id, "erbeikou", StringComparison.Ordinal))) ?? yakuResults[0];
        
         // 计算每一个切割的符数
-        var fuResult = _fuCalculator.Calculate(calculationTiles, yakuResults[0], context);
-        var pointResult = _scoreCalculator.Calculate(yakuResults[0], fuResult, context);
+        var fuResult = _fuCalculator.Calculate(calculationTiles, selectedYakuResult, context);
+        var pointResult = _scoreCalculator.Calculate(selectedYakuResult, fuResult, context);
 
         // 当前 demo 先用“能拆牌、有役、有点数”作为是否和牌的判断条件。
-        var isWinningHand = yakuResults[0].Yakus.Count > 0 && pointResult.TotalPoints > 0;
-        var winningShape = yakuResults[0].SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
+        var isWinningHand = selectedYakuResult.Yakus.Count > 0 && pointResult.TotalPoints > 0;
+        var winningShape = selectedYakuResult.SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
         var message = isWinningHand
             ? "Scoring pipeline completed: split hand, detected yaku, calculated fu, calculated points."
             : "Scoring pipeline completed, but the hand has no valid yaku yet.";
