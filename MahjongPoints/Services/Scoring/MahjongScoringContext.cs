@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MahjongPoints.Models;
@@ -244,6 +245,8 @@ public sealed class MahjongScoringContext : ObservableObject
     /// </summary>
     private int _riichiSticks;
 
+    private int _doraCount;
+
     /// <summary>
     /// 用户确认过的副露面子列表；为空时由算点服务自行使用全部拆牌结果。
     /// </summary>
@@ -265,6 +268,12 @@ public sealed class MahjongScoringContext : ObservableObject
     {
         get => _riichiSticks;
         set => SetProperty(ref _riichiSticks, value);
+    }
+
+    public int DoraCount
+    {
+        get => _doraCount;
+        set => SetProperty(ref _doraCount, Math.Max(0, value));
     }
 
     /// <summary>

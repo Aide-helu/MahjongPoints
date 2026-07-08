@@ -22,7 +22,9 @@ public sealed class DefaultScoreCalculator : IScoreCalculator
         FuCalculationResult fuResult,
         MahjongScoringContext context)
     {
-        var fan = yakuResult.TotalFan;
+        var yakuFan = yakuResult.TotalFan;
+        var doraFan = Math.Max(0, context.DoraCount);
+        var fan = yakuFan > 0 ? yakuFan + doraFan : 0;
         var fu = fuResult.Fu;
         var breakdown = new List<string>(fuResult.Breakdown);
 
@@ -43,6 +45,11 @@ public sealed class DefaultScoreCalculator : IScoreCalculator
 
         breakdown.Add($"番数：{fan}。");
         breakdown.Add($"符数：{fu}。");
+        if (doraFan > 0)
+        {
+            breakdown.Add($"宝牌：+{doraFan}番。");
+        }
+
         breakdown.Add(score.BasePointDescription);
         breakdown.Add(score.PaymentDescription);
         if (riichiStickPoints > 0)
@@ -59,7 +66,12 @@ public sealed class DefaultScoreCalculator : IScoreCalculator
                 fu,
                 totalPoints,
                 yaku.Description))
-            .ToArray();
+            .ToList();
+
+        if (doraFan > 0)
+        {
+            items.Add(new MahjongScoreItem("宝牌", doraFan, 0, totalPoints, $"宝牌 {doraFan} 枚，+{doraFan}番，不计符。"));
+        }
 
         var summary = $"{string.Join(", ", yakuResult.Yakus.Select(yaku => yaku.Name))} | {fan}番 {fu}符 | {score.Summary} | 总收入 {totalPoints}点";
 

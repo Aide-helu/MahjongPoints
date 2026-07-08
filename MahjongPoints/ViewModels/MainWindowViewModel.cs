@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MahjongPoints.Models;
 using MahjongPoints.Services;
 using MahjongPoints.Services.Scoring;
@@ -94,10 +96,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _isBusy;
 
+    [ObservableProperty]
+    private bool _isTenpaiMode;
+
+    [ObservableProperty]
+    private bool _isWinningTileMode;
+
+    [ObservableProperty]
+    private RecognizedMahjongTile? _selectedTenpaiTile;
+
     /// <summary>
     /// 界面展示的识别牌集合。
     /// </summary>
     public ObservableCollection<RecognizedMahjongTile> RecognizedTiles { get; } = [];
+
+    public ObservableCollection<RecognizedMahjongTile> TenpaiTiles { get; } = [];
 
     /// <summary>
     /// 界面展示的算点用完整牌集合。
@@ -245,7 +258,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 RecognizedTiles.Add(tile);
             }
 
-            SelectDefaultWinningTile(recognitionResult.Tiles);
+            PrepareTileSelection(recognitionResult.Tiles);
 
             RecognitionSummary = $"{recognitionResult.Tiles.Count} 张手牌 | {recognitionResult.InferenceMode} | {recognitionResult.ModelName}";
 
@@ -353,7 +366,54 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             or nameof(MahjongScoringContext.IsRobKong)
             or nameof(MahjongScoringContext.IsRidgeBlossom)
             or nameof(MahjongScoringContext.SelectedOpenMelds)
-            or nameof(MahjongScoringContext.RiichiSticks);
+            or nameof(MahjongScoringContext.RiichiSticks)
+            or nameof(MahjongScoringContext.DoraCount);
+    }
+
+    [RelayCommand]
+    private void IncrementDoraCount()
+    {
+        ScoringContext.DoraCount++;
+    }
+
+    [RelayCommand]
+    private void DecrementDoraCount()
+    {
+        ScoringContext.DoraCount = Math.Max(0, ScoringContext.DoraCount - 1);
+    }
+
+    partial void OnSelectedTenpaiTileChanged(RecognizedMahjongTile? value)
+    {
+        if (value is not null)
+        {
+            ScoringContext.WinningTile = value;
+        }
+    }
+
+    private void PrepareTileSelection(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
+    {
+        TenpaiTiles.Clear();
+        IsTenpaiMode = recognizedTiles.Count == 13;
+        IsWinningTileMode = recognizedTiles.Count == 14;
+
+        if (IsTenpaiMode)
+        {
+            foreach (var tile in _scoringService.FindTenpaiTiles(recognizedTiles))
+            {
+                TenpaiTiles.Add(tile);
+            }
+
+            SelectedTenpaiTile = TenpaiTiles.FirstOrDefault();
+            if (SelectedTenpaiTile is not null)
+            {
+                ScoringContext.WinningTile = SelectedTenpaiTile;
+            }
+
+            return;
+        }
+
+        SelectedTenpaiTile = null;
+        SelectDefaultWinningTile(recognizedTiles);
     }
 
     /// <summary>
@@ -474,9 +534,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private void ResetResultState()
     {
         RecognizedTiles.Clear();
+        TenpaiTiles.Clear();
         CalculationTiles.Clear();
         ScoreItems.Clear();
         ScoringContext.SelectedOpenMelds = [];
+        SelectedTenpaiTile = null;
+        IsTenpaiMode = false;
+        IsWinningTileMode = false;
         RecognitionSummary = "等待识别";
         ScoreSummary = "等待算点";
         WinningTileText = "胡牌张：未计算";

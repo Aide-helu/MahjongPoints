@@ -13,6 +13,14 @@ namespace MahjongPoints.Services;
 /// </summary>
 public sealed class MahjongHandScoringService : IHandScoringService
 {
+    private static readonly string[] _allTileCodes =
+    [
+        "1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m",
+        "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p",
+        "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s",
+        "1z", "2z", "3z", "4z", "5z", "6z", "7z"
+    ];
+
     /// <summary>
     /// 手牌拆解器。
     /// </summary>
@@ -64,6 +72,35 @@ public sealed class MahjongHandScoringService : IHandScoringService
         _scoreCalculator = scoreCalculator;
     }
 
+    public IReadOnlyList<RecognizedMahjongTile> FindTenpaiTiles(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
+    {
+        if (recognizedTiles.Count != 13)
+        {
+            return [];
+        }
+
+        var counts = recognizedTiles
+            .GroupBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+        var results = new List<RecognizedMahjongTile>();
+        foreach (var code in _allTileCodes)
+        {
+            if (counts.GetValueOrDefault(code) >= 4)
+            {
+                continue;
+            }
+
+            var tile = CreateTile(code);
+            if (_handSplitter.Split(recognizedTiles.Concat([tile]).ToArray()).Count > 0)
+            {
+                results.Add(tile);
+            }
+        }
+
+        return results;
+    }
+
     /// <summary>
     /// 把识别出的 14 张胡牌状态手牌依次送入拆牌、判役、算符和算点流程。
     /// </summary>
@@ -79,7 +116,9 @@ public sealed class MahjongHandScoringService : IHandScoringService
         cancellationToken.ThrowIfCancellationRequested();
 
         // ONNX 或 demo 识别器应直接返回 14 张胡牌状态手牌，这里直接使用识别结果。
-        var calculationTiles = recognizedTiles.ToArray();
+        var calculationTiles = recognizedTiles.Count == 13 && IsKnownTile(context.WinningTile)
+            ? recognizedTiles.Concat([context.WinningTile]).ToArray()
+            : recognizedTiles.ToArray();
 
         // 胡牌张来自用户在界面选择后写入的算点上下文。
         var winningTile = context.WinningTile;
@@ -111,18 +150,23 @@ public sealed class MahjongHandScoringService : IHandScoringService
             return Task.FromResult(noSplitResult);
         }
 
-        // 每一个分割的番
-        var yakuResults = _yakuDetector.Detect(calculationTiles, splits, context);
-        var selectedYakuResult = yakuResults.FirstOrDefault(result =>
-            result.Yakus.Any(yaku => string.Equals(yaku.Id, "erbeikou", StringComparison.Ordinal))) ?? yakuResults[0];
-       
-        // 计算每一个切割的符数
-        var fuResult = _fuCalculator.Calculate(calculationTiles, selectedYakuResult, context);
-        var pointResult = _scoreCalculator.Calculate(selectedYakuResult, fuResult, context);
+        var scoredResults = _yakuDetector
+            .Detect(calculationTiles, splits, context)
+            .Select(yakuResult =>
+            {
+                var fuResult = _fuCalculator.Calculate(calculationTiles, yakuResult, context);
+                var pointResult = _scoreCalculator.Calculate(yakuResult, fuResult, context);
+                return new { YakuResult = yakuResult, FuResult = fuResult, PointResult = pointResult };
+            })
+            .ToArray();
+
+        var selected = scoredResults
+            .OrderByDescending(result => result.PointResult.TotalPoints)
+            .First();
 
         // 当前 demo 先用“能拆牌、有役、有点数”作为是否和牌的判断条件。
-        var isWinningHand = selectedYakuResult.Yakus.Count > 0 && pointResult.TotalPoints > 0;
-        var winningShape = selectedYakuResult.SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
+        var isWinningHand = selected.YakuResult.Yakus.Count > 0 && selected.PointResult.TotalPoints > 0;
+        var winningShape = selected.YakuResult.SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
         var message = isWinningHand
             ? "Scoring pipeline completed: split hand, detected yaku, calculated fu, calculated points."
             : "Scoring pipeline completed, but the hand has no valid yaku yet.";
@@ -133,11 +177,11 @@ public sealed class MahjongHandScoringService : IHandScoringService
             winningTile,
             isWinningHand,
             winningShape,
-            pointResult.Summary,
-            pointResult.TotalFan,
-            pointResult.Fu,
-            pointResult.TotalPoints,
-            pointResult.Items,
+            selected.PointResult.Summary,
+            selected.PointResult.TotalFan,
+            selected.PointResult.Fu,
+            selected.PointResult.TotalPoints,
+            selected.PointResult.Items,
             message);
 
         return Task.FromResult(result);
@@ -210,6 +254,12 @@ public sealed class MahjongHandScoringService : IHandScoringService
     {
         return $"{meld.Type}:{string.Join(",", meld.Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
     }
+
+    private static RecognizedMahjongTile CreateTile(string code) =>
+        new(code, GetTileDisplayName(code), 1);
+
+    private static bool IsKnownTile(RecognizedMahjongTile tile) =>
+        _allTileCodes.Contains(tile.Code, StringComparer.OrdinalIgnoreCase);
     
     /// <summary>
     /// 把当前手牌拆解结果输出到控制台，方便先观察拆牌流程是否正确。
