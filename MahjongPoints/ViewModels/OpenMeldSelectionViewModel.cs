@@ -22,10 +22,10 @@ public sealed class OpenMeldSelectionViewModel : ObservableObject
         var melds = splits
             .Where(split => split.Shape == MahjongHandShape.Standard)
             .SelectMany(split => split.Melds)
-            .GroupBy(GetMeldKey, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(meld => meld.Key, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .OrderBy(meld => meld.Type)
-            .ThenBy(GetMeldKey, StringComparer.Ordinal)
+            .ThenBy(meld => meld.Key, StringComparer.Ordinal)
             .ToArray();
 
         var index = 1;
@@ -77,10 +77,6 @@ public sealed class OpenMeldSelectionViewModel : ObservableObject
         }
     }
 
-    private static string GetMeldKey(MahjongMeld meld)
-    {
-        return $"{meld.Type}:{string.Join(",", meld.Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
-    }
 }
 
 /// <summary>

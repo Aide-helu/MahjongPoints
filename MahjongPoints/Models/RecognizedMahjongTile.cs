@@ -22,11 +22,6 @@ public sealed record RecognizedMahjongTile(
 
     public Bitmap TileImage => _imageCache.GetOrAdd(ImagePath, LoadImage);
 
-    /// <summary>
-    /// 识别置信度的百分比显示文本。
-    /// </summary>
-    public string ConfidenceText => $"{Confidence:P0}";
-
     private static string GetImagePath(string code)
     {
         if (code.Length == 2 && char.IsDigit(code[0]))

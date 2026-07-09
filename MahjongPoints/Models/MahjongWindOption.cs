@@ -15,11 +15,6 @@ public sealed record MahjongWindOption(MahjongWind Wind)
     public string DisplayName => Wind.ToDisplayName();
 
     /// <summary>
-    /// 风位对应的风牌编码。
-    /// </summary>
-    public string TileCode => Wind.ToTileCode();
-
-    /// <summary>
     /// 东、南、西、北四个固定选项，供自风和场风下拉框复用。
     /// </summary>
     public static IReadOnlyList<MahjongWindOption> All { get; } =

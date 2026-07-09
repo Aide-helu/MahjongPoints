@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MahjongPoints.Models;
@@ -40,4 +41,6 @@ public sealed record MahjongMeld(
     /// 供界面展示的面子文本。
     /// </summary>
     public string DisplayText => string.Join(" ", Tiles.Select(tile => tile.Code));
+
+    public string Key => $"{Type}:{string.Join(",", Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
 }

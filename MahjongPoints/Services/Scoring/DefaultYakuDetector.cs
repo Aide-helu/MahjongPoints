@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.JavaScript;
 using MahjongPoints.Models;
 
 namespace MahjongPoints.Services.Scoring;
@@ -191,13 +190,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
             }
             
             //判断役牌三元牌
-            if (IsYiPaiSanYuanPai(tiles, split))
+            foreach (var sanYuanPai in DetectSanYuanPai(split))
             {
-                var sanYuanPais = DetectSanYuanPai(split); 
-                foreach (var sanYuanPai in sanYuanPais)
-                {
-                    yakus.Add(sanYuanPai);
-                }
+                yakus.Add(sanYuanPai);
             }
             
             //判断役牌风牌
@@ -393,29 +388,6 @@ public sealed class DefaultYakuDetector : IYakuDetector
     }
 
     /// <summary>
-    /// 判断是否是三元役牌
-    /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult">分割序列。</param>
-    /// <returns></returns>
-    private static bool IsYiPaiSanYuanPai(IEnumerable<RecognizedMahjongTile> tiles,MahjongHandSplitResult splitResult)
-    {
-        //找到刻子/杠子的面子
-        foreach (var meld in splitResult.Melds)
-        {
-            if(meld.Type is MahjongMeldType.Sequence)continue;
-            if (meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad)
-            {
-                //判断这是不是三元牌
-                if (meld.Tiles[0].Code is "5z" or "6z" or "7z")
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    /// <summary>
     /// 检测是哪种三元牌
     /// </summary>
     /// <param name="splitResult"></param>
@@ -476,23 +448,20 @@ public sealed class DefaultYakuDetector : IYakuDetector
     private static bool IsYiBeiKou(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //一杯口只适用于门前清的标准型手牌
-        if (context.IsMenzen && splitResult.Shape == MahjongHandShape.Standard)
+        if (!context.IsMenzen || splitResult.Shape != MahjongHandShape.Standard)
         {
-            //搭子记录器
-            var meldDictionary =new Dictionary<string, int>();
-            //遍历四个搭子
-            foreach (var meld in splitResult.Melds)
-            {
-                if (meld.Type is MahjongMeldType.Sequence)
-                {
-                    meldDictionary[meld.DisplayText] = meldDictionary.GetValueOrDefault(meld.DisplayText) + 1;
-                }
-            }
-            //统计Value值为2的个数==1 返回true
-            return meldDictionary.Count(v => v.Value == 2) == 1;
+            return false;
         }
-        return false;
+
+        //统计Value值为2的个数==1 返回true
+        return CountSequences(splitResult).Count(pair => pair.Value == 2) == 1;
     }
+
+    private static IReadOnlyDictionary<string, int> CountSequences(MahjongHandSplitResult splitResult) =>
+        splitResult.Melds
+            .Where(meld => meld.Type == MahjongMeldType.Sequence)
+            .GroupBy(meld => meld.DisplayText, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 判断是否是平和
@@ -695,38 +664,15 @@ public sealed class DefaultYakuDetector : IYakuDetector
             return false;
         }
 
-        //
         var sequenceStartsBySuit = new Dictionary<char, HashSet<int>>();
-        //
-        foreach (var meld in splitResult.Melds)
+        foreach (var (start, suit) in GetSequenceStarts(splitResult))
         {
-            //不是顺子直接下一个面子
-            if (meld.Type != MahjongMeldType.Sequence)
-            {
-                continue;
-            }
-            
-            //获取 1 4 7顺子开头
-            var firstCode = meld.Tiles[0].Code;
-            //如果是字牌直接下一个面子
-            if (firstCode.Length != 2 || firstCode[1] == 'z')
-            {
-                continue;
-            }
-            
-            //记录万条筒
-            var suit = firstCode[1];
-            //记录数字
-            var start = firstCode[0] - '0';
-            
-            //如果当前的条筒万还没有创建字典类型就先创建
             if (!sequenceStartsBySuit.TryGetValue(suit, out var starts))
             {
                 starts = [];
                 sequenceStartsBySuit[suit] = starts;
             }
-            
-            //按照条筒万添加每一个顺子的首个字母
+
             starts.Add(start);
         }
 
@@ -752,21 +698,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
 
         //与一气通贯同理，根据获取到的顺子作为Key：1234567，然后去搜索是否存在一个顺子有m p s
         var sequenceSuitsByStart = new Dictionary<int, HashSet<char>>();
-        foreach (var meld in splitResult.Melds)
+        foreach (var (start, suit) in GetSequenceStarts(splitResult))
         {
-            if (meld.Type != MahjongMeldType.Sequence)
-            {
-                continue;
-            }
-
-            var firstCode = meld.Tiles[0].Code;
-            if (firstCode.Length != 2 || firstCode[1] == 'z')
-            {
-                continue;
-            }
-
-            var start = firstCode[0] - '0';
-            var suit = firstCode[1];
             if (!sequenceSuitsByStart.TryGetValue(start, out var suits))
             {
                 suits = [];
@@ -780,6 +713,25 @@ public sealed class DefaultYakuDetector : IYakuDetector
             suits.Contains('m') &&
             suits.Contains('p') &&
             suits.Contains('s'));
+    }
+
+    private static IEnumerable<(int Start, char Suit)> GetSequenceStarts(MahjongHandSplitResult splitResult)
+    {
+        foreach (var meld in splitResult.Melds)
+        {
+            if (meld.Type != MahjongMeldType.Sequence)
+            {
+                continue;
+            }
+
+            var firstCode = meld.Tiles[0].Code;
+            if (firstCode.Length != 2 || firstCode[1] == 'z')
+            {
+                continue;
+            }
+
+            yield return (firstCode[0] - '0', firstCode[1]);
+        }
     }
 
     /// <summary>
@@ -1018,19 +970,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
             return false;
         }
 
-        var sequenceCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var meld in splitResult.Melds)
-        {
-            if (meld.Type != MahjongMeldType.Sequence)
-            {
-                continue;
-            }
-
-            sequenceCounts[meld.DisplayText] = sequenceCounts.GetValueOrDefault(meld.DisplayText) + 1;
-        }
-
         //需要两种不同的顺子各出现两次；四组完全相同不算二杯口
-        return sequenceCounts.Count(pair => pair.Value == 2) == 2;
+        return CountSequences(splitResult).Count(pair => pair.Value == 2) == 2;
     }
 
     /// <summary>

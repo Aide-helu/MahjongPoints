@@ -192,15 +192,6 @@ public sealed class DefaultHandSplitter : IHandSplitter
     
 
     /// <summary>
-    /// 判断剩余牌计数中是否还有指定编码的牌。
-    /// </summary>
-    /// <param name="counts">剩余牌计数字典。</param>
-    /// <param name="code">麻将牌编码。</param>
-    /// <returns>如果指定牌仍有剩余，则返回 <c>true</c>。</returns>
-    private static bool HasTile(IReadOnlyDictionary<string, int> counts, string code) =>
-        counts.TryGetValue(code, out var count) && count > 0;
-
-    /// <summary>
     /// 从剩余牌计数中移除指定数量的牌。
     /// </summary>
     /// <param name="counts">剩余牌计数字典。</param>

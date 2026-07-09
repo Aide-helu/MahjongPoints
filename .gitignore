@@ -52,6 +52,7 @@ ScaffoldingReadMe.txt
 .env
 
 # Others
+*.DS_Store
 ~$*
 *~
 CodeCoverage/

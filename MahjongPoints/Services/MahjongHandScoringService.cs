@@ -132,7 +132,6 @@ public sealed class MahjongHandScoringService : IHandScoringService
         if (splits.Count == 0)
         {
             var noSplitResult = new MahjongScoringResult(
-                calculationTiles,
                 winningTile,
                 false,
                 context.SelectedOpenMelds.Count == 0
@@ -143,9 +142,7 @@ public sealed class MahjongHandScoringService : IHandScoringService
                     : "No split contains all selected open melds.",
                 0,
                 0,
-                0,
-                [],
-                "无法拆牌。");
+                0);
             return Task.FromResult(noSplitResult);
         }
 
@@ -166,23 +163,17 @@ public sealed class MahjongHandScoringService : IHandScoringService
         // 当前 demo 先用“能拆牌、有役、有点数”作为是否和牌的判断条件。
         var isWinningHand = selected.YakuResult.Yakus.Count > 0 && selected.PointResult.TotalPoints > 0;
         var winningShape = selected.YakuResult.SelectedSplit?.DisplayText ?? "No valid 4 melds + 1 pair split.";
-        var message = isWinningHand
-            ? "算点完成。"
-            : "无役。";
 
         
         // 把四层流水线的结果转换成 ViewModel 和界面使用的统一算点结果模型。
         var result = new MahjongScoringResult(
-            calculationTiles,
             winningTile,
             isWinningHand,
             winningShape,
             selected.PointResult.Summary,
             selected.PointResult.TotalFan,
             selected.PointResult.Fu,
-            selected.PointResult.TotalPoints,
-            selected.PointResult.Items,
-            message);
+            selected.PointResult.TotalPoints);
 
         return Task.FromResult(result);
     }
@@ -205,7 +196,7 @@ public sealed class MahjongHandScoringService : IHandScoringService
         }
 
         var selectedKeys = selectedOpenMelds
-            .Select(GetMeldKey)
+            .Select(meld => meld.Key)
             .GroupBy(key => key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
@@ -217,7 +208,7 @@ public sealed class MahjongHandScoringService : IHandScoringService
 
             foreach (var meld in split.Melds)
             {
-                var meldKey = GetMeldKey(meld);
+                var meldKey = meld.Key;
                 if (remainingSelectedKeys.TryGetValue(meldKey, out var remainingCount) && remainingCount > 0)
                 {
                     melds.Add(meld with { IsOpen = true });
@@ -243,16 +234,6 @@ public sealed class MahjongHandScoringService : IHandScoringService
         }
 
         return results;
-    }
-
-    /// <summary>
-    /// 获取面子的匹配键，用于副露面子和拆牌结果之间做内容匹配。
-    /// </summary>
-    /// <param name="meld">面子。</param>
-    /// <returns>稳定匹配键。</returns>
-    private static string GetMeldKey(MahjongMeld meld)
-    {
-        return $"{meld.Type}:{string.Join(",", meld.Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
     }
 
     private static RecognizedMahjongTile CreateTile(string code) =>

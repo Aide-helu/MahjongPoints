@@ -234,5 +234,5 @@ sealed class FakeHandScoringService : IHandScoringService
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
         MahjongScoringContext context,
         CancellationToken cancellationToken = default) =>
-        Task.FromResult(new MahjongScoringResult(recognizedTiles, context.WinningTile, false, "shape", "No yaku", 0, 0, 0, [], "No yaku"));
+        Task.FromResult(new MahjongScoringResult(context.WinningTile, false, "shape", "No yaku", 0, 0, 0));
 }

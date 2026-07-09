@@ -31,12 +31,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IHandScoringService _scoringService;
 
     /// <summary>
-    /// 当前选择的图片完整路径。
-    /// </summary>
-    [ObservableProperty]
-    private string? _selectedImagePath;
-
-    /// <summary>
     /// 当前选择图片的文件名。
     /// </summary>
     [ObservableProperty]
@@ -55,12 +49,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _statusMessage = "请选择一张图片，模型会识别手牌并计算点数。";
 
     /// <summary>
-    /// 手牌识别摘要。
-    /// </summary>
-    [ObservableProperty]
-    private string _recognitionSummary = "等待识别";
-
-    /// <summary>
     /// 算点结果摘要。
     /// </summary>
     [ObservableProperty]
@@ -77,18 +65,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     [ObservableProperty]
     private string _winningShape = "牌型：未计算";
-
-    /// <summary>
-    /// 算点流程提示文本。
-    /// </summary>
-    [ObservableProperty]
-    private string _scoringMessage = "当前结果会在识别后自动送入算点逻辑。";
-
-    /// <summary>
-    /// 当前识别结果是否被算点服务判定为和牌。
-    /// </summary>
-    [ObservableProperty]
-    private bool _isWinningHand;
 
     /// <summary>
     /// 当前是否正在执行图片加载、识别或算点流程。
@@ -111,16 +87,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public ObservableCollection<RecognizedMahjongTile> RecognizedTiles { get; } = [];
 
     public ObservableCollection<RecognizedMahjongTile> TenpaiTiles { get; } = [];
-
-    /// <summary>
-    /// 界面展示的算点用完整牌集合。
-    /// </summary>
-    public ObservableCollection<RecognizedMahjongTile> CalculationTiles { get; } = [];
-
-    /// <summary>
-    /// 界面展示的役种或得分明细集合。
-    /// </summary>
-    public ObservableCollection<MahjongScoreItem> ScoreItems { get; } = [];
 
     /// <summary>
     /// 用户当前选择的胡牌状态和算点环境。
@@ -238,7 +204,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         IsBusy = true;
         StatusMessage = "正在加载图片...";
-        SelectedImagePath = imagePath;
         SelectedFileName = Path.GetFileName(imagePath);
         ResetResultState();
 
@@ -260,8 +225,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             PrepareTileSelection(recognitionResult.Tiles);
 
-            RecognitionSummary = $"{recognitionResult.Tiles.Count} 张手牌 | {recognitionResult.InferenceMode} | {recognitionResult.ModelName}";
-
             StatusMessage = "正在算点...";
             
             //算点服务入口
@@ -278,7 +241,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             ResetResultState();
-            RecognitionSummary = "识别失败";
             ScoreSummary = "算点失败";
             StatusMessage = ex.Message;
         }
@@ -479,7 +441,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             ScoreSummary = "算点失败";
-            ScoringMessage = ex.Message;
             StatusMessage = ex.Message;
         }
     }
@@ -536,23 +497,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <param name="result">算点服务返回的结果。</param>
     private void ApplyScoringResult(MahjongScoringResult result)
     {
-        CalculationTiles.Clear();
-        foreach (var tile in result.CalculationTiles)
-        {
-            CalculationTiles.Add(tile);
-        }
-
-        ScoreItems.Clear();
-        foreach (var item in result.Items)
-        {
-            ScoreItems.Add(item);
-        }
-
-        IsWinningHand = result.IsWinningHand;
         ScoreSummary = result.ScoreSummary;
         WinningTileText = $"胡牌张：{result.WinningTile.DisplayName} ({result.WinningTile.Code})";
         WinningShape = $"牌型：{result.WinningShape}";
-        ScoringMessage = result.Message;
     }
 
     /// <summary>
@@ -562,18 +509,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         RecognizedTiles.Clear();
         TenpaiTiles.Clear();
-        CalculationTiles.Clear();
-        ScoreItems.Clear();
         ScoringContext.SelectedOpenMelds = [];
         SelectedTenpaiTile = null;
         IsTenpaiMode = false;
         IsWinningTileMode = false;
-        RecognitionSummary = "等待识别";
         ScoreSummary = "等待算点";
         WinningTileText = "胡牌张：未计算";
         WinningShape = "牌型：未计算";
-        ScoringMessage = "当前结果会在识别后自动送入算点逻辑。";
-        IsWinningHand = false;
     }
 
     /// <summary>
