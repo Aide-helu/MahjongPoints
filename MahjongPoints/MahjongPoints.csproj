@@ -9,7 +9,8 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
-        <Content Include="Models\shiranai_shallow_best.onnx" CopyToOutputDirectory="PreserveNewest" />
+        <AvaloniaResource Include="Images\**" />
+        <Content Include="Models\shiranai_shallow_best.onnx" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>

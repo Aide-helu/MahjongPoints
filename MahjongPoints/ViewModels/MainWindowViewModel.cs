@@ -273,7 +273,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             //界面结果显示
             ApplyScoringResult(scoringResult);
 
-            StatusMessage = $"{recognitionResult.Message} {scoringResult.Message}";
+            StatusMessage = "算点完成。";
         }
         catch (Exception ex)
         {
@@ -382,6 +382,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ScoringContext.DoraCount = Math.Max(0, ScoringContext.DoraCount - 1);
     }
 
+    [RelayCommand]
+    private void SelectRiichiIppatsuTsumo()
+    {
+        ApplyRiichiShortcut(isIppatsu: true, isTsumo: true);
+    }
+
+    [RelayCommand]
+    private void SelectRiichiIppatsu()
+    {
+        ApplyRiichiShortcut(isIppatsu: true, isTsumo: false);
+    }
+
+    [RelayCommand]
+    private void SelectRiichiTsumo()
+    {
+        ApplyRiichiShortcut(isIppatsu: false, isTsumo: true);
+    }
+
+    private void ApplyRiichiShortcut(bool isIppatsu, bool isTsumo)
+    {
+        ScoringContext.IsOpenHand = false;
+        ScoringContext.IsDoubleRiichi = false;
+        ScoringContext.IsRiichi = true;
+        ScoringContext.IsIppatsu = isIppatsu;
+        ScoringContext.IsTsumo = isTsumo;
+    }
+
     partial void OnSelectedTenpaiTileChanged(RecognizedMahjongTile? value)
     {
         if (value is not null)
@@ -447,7 +474,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 ScoringContext);
 
             ApplyScoringResult(scoringResult);
-            StatusMessage = scoringResult.Message;
+            StatusMessage = "算点完成。";
         }
         catch (Exception ex)
         {

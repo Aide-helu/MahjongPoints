@@ -16,6 +16,26 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <Window.Styles>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Border.tile-card">
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected Border.tile-card">
+            <Setter Property="BorderBrush" Value="#2E90FA"/>
+            <Setter Property="BorderThickness" Value="4"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+    </Window.Styles>
+
     <Grid RowDefinitions="Auto,*" Margin="16" RowSpacing="12">
         <!--一般作为一个父控件，它可以给子控件控制位置，它DockPanel可以放四周-->
         <DockPanel LastChildFill="True">
@@ -42,28 +62,83 @@
 
         <!--定义两列，第一列占3*，第二列占2*，两列边距设置为16-->
         <Grid Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="16">
-            <Border BorderBrush="#D0D5DD"
-                    BorderThickness="3"
-                    Background="#F7F8FA"
-                    CornerRadius="8"
-                    Padding="8">
-                <Image Source="{Binding PreviewImage}"
-                       Stretch="Uniform"/>
-            </Border>
+            <Grid RowDefinitions="*,Auto" RowSpacing="12">
+                <Border BorderBrush="#D0D5DD"
+                        BorderThickness="3"
+                        Background="#F7F8FA"
+                        CornerRadius="8"
+                        Padding="8">
+                    <Image Source="{Binding PreviewImage}"
+                           Stretch="Uniform"/>
+                </Border>
+
+                <StackPanel Grid.Row="1"
+                            Spacing="8"
+                            IsVisible="{Binding IsWinningTileMode}">
+                    <TextBlock Text="识别出的 14 张胡牌"
+                               FontSize="16"
+                               FontWeight="SemiBold"/>
+                    <ListBox ItemsSource="{Binding RecognizedTiles}"
+                             SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
+                             SelectionMode="Single"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="tile-card"
+                                        Width="86"
+                                        Height="108">
+                                    <Image Source="{Binding TileImage}"
+                                           Stretch="Uniform"/>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1"
+                            Spacing="8"
+                            IsVisible="{Binding IsTenpaiMode}">
+                    <TextBlock Text="叫听牌"
+                               FontSize="16"
+                               FontWeight="SemiBold"/>
+                    <ListBox ItemsSource="{Binding TenpaiTiles}"
+                             SelectedItem="{Binding SelectedTenpaiTile, Mode=TwoWay}"
+                             SelectionMode="Single"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="tile-card"
+                                        Width="86"
+                                        Height="108">
+                                    <Image Source="{Binding TileImage}"
+                                           Stretch="Uniform"/>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Grid>
 
             <ScrollViewer Grid.Column="1">
                 <StackPanel Spacing="14">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="算点 Demo"
+                        <TextBlock Text="麻将算点"
                                    FontSize="22"
                                    FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding RecognitionSummary}"
-                                   Foreground="#555"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding SelectedImagePath}"
-                                   Foreground="#667085"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <Border BorderBrush="#D0D5DD"
@@ -82,119 +157,8 @@
                             <TextBlock Text="{Binding WinningShape}"
                                        Foreground="#555"
                                        TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding ScoringMessage}"
-                                       Foreground="#667085"
-                                       TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
-
-                    <StackPanel Spacing="8"
-                                IsVisible="{Binding IsWinningTileMode}">
-                        <TextBlock Text="识别出的 14 张胡牌"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"/>
-                        <ListBox ItemsSource="{Binding RecognizedTiles}"
-                                 SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
-                                 SelectionMode="Single"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="0">
-                            <ListBox.Styles>
-                                <Style Selector="ListBoxItem">
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="Margin" Value="0,0,8,8"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                </Style>
-                                <Style Selector="ListBoxItem:selected Border.tile-card">
-                                    <Setter Property="BorderBrush" Value="#027A48"/>
-                                    <Setter Property="Background" Value="#ECFDF3"/>
-                                </Style>
-                            </ListBox.Styles>
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Classes="tile-card"
-                                            Width="86"
-                                            Padding="8"
-                                            BorderBrush="#D0D5DD"
-                                            BorderThickness="1"
-                                            Background="White"
-                                            CornerRadius="4">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="{Binding DisplayName}"
-                                                       FontSize="16"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Code}"
-                                                       FontSize="12"
-                                                       Foreground="#667085"
-                                                       HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding ConfidenceText}"
-                                                       FontSize="12"
-                                                       Foreground="#027A48"
-                                                       HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-
-                    <StackPanel Spacing="8"
-                                IsVisible="{Binding IsTenpaiMode}">
-                        <TextBlock Text="叫听牌"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"/>
-                        <ListBox ItemsSource="{Binding TenpaiTiles}"
-                                 SelectedItem="{Binding SelectedTenpaiTile, Mode=TwoWay}"
-                                 SelectionMode="Single"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="0">
-                            <ListBox.Styles>
-                                <Style Selector="ListBoxItem">
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="Margin" Value="0,0,8,8"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                </Style>
-                                <Style Selector="ListBoxItem:selected Border.tile-card">
-                                    <Setter Property="BorderBrush" Value="#027A48"/>
-                                    <Setter Property="Background" Value="#ECFDF3"/>
-                                </Style>
-                            </ListBox.Styles>
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Classes="tile-card"
-                                            Width="86"
-                                            Padding="8"
-                                            BorderBrush="#D0D5DD"
-                                            BorderThickness="1"
-                                            Background="White"
-                                            CornerRadius="4">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="{Binding DisplayName}"
-                                                       FontSize="16"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Code}"
-                                                       FontSize="12"
-                                                       Foreground="#667085"
-                                                       HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
 
                     <Border BorderBrush="#D0D5DD"
                             BorderThickness="1"
@@ -205,6 +169,17 @@
                             <TextBlock Text="算点选项"
                                        FontSize="16"
                                        FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="立一自"
+                                        Padding="12,6"
+                                        Command="{Binding SelectRiichiIppatsuTsumoCommand}"/>
+                                <Button Content="立一"
+                                        Padding="12,6"
+                                        Command="{Binding SelectRiichiIppatsuCommand}"/>
+                                <Button Content="立自"
+                                        Padding="12,6"
+                                        Command="{Binding SelectRiichiTsumoCommand}"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <StackPanel Width="120" Spacing="4">
                                     <TextBlock Text="自风"
@@ -271,38 +246,6 @@
                         </StackPanel>
                     </Border>
 
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="番符明细"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"/>
-                        <ItemsControl ItemsSource="{Binding ScoreItems}">
-                            <ItemsControl.Styles>
-                                <Style Selector="ContentPresenter">
-                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                                </Style>
-                            </ItemsControl.Styles>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,8"
-                                            Padding="10"
-                                            BorderBrush="#D0D5DD"
-                                            BorderThickness="1"
-                                            Background="White"
-                                            CornerRadius="4"
-                                            HorizontalAlignment="Stretch">
-                                        <StackPanel Spacing="3">
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontWeight="SemiBold"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Description}"
-                                                       Foreground="#555"
-                                                       TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Concurrent;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+
 namespace MahjongPoints.Models;
 
 /// <summary>
@@ -11,8 +16,37 @@ public sealed record RecognizedMahjongTile(
     string DisplayName,
     double Confidence)
 {
+    private static readonly ConcurrentDictionary<string, Bitmap> _imageCache = new(StringComparer.Ordinal);
+
+    public string ImagePath => GetImagePath(Code);
+
+    public Bitmap TileImage => _imageCache.GetOrAdd(ImagePath, LoadImage);
+
     /// <summary>
     /// 识别置信度的百分比显示文本。
     /// </summary>
     public string ConfidenceText => $"{Confidence:P0}";
+
+    private static string GetImagePath(string code)
+    {
+        if (code.Length == 2 && char.IsDigit(code[0]))
+        {
+            return code[1] switch
+            {
+                'm' or 'M' => $"avares://MahjongPoints/Images/manzu/m_{code[0]}.png",
+                'p' or 'P' => $"avares://MahjongPoints/Images/pinzu/p_{code[0]}.png",
+                's' or 'S' => $"avares://MahjongPoints/Images/sozu/s_{code[0]}.png",
+                'z' or 'Z' => $"avares://MahjongPoints/Images/tupai/z_{code[0]}.png",
+                _ => "avares://MahjongPoints/Images/tupai/z_5.png"
+            };
+        }
+
+        return "avares://MahjongPoints/Images/tupai/z_5.png";
+    }
+
+    private static Bitmap LoadImage(string path)
+    {
+        using var stream = AssetLoader.Open(new Uri(path));
+        return new Bitmap(stream);
+    }
 }

@@ -22,7 +22,9 @@ public sealed class MahjongScoringOptionItem : ObservableObject
         _context = context;
         _property = property;
         Key = property.Name;
-        DisplayName = option.DisplayName;
+        DisplayName = option.DisplayName.StartsWith("是否", StringComparison.Ordinal)
+            ? option.DisplayName[2..]
+            : option.DisplayName;
 
         _context.PropertyChanged += Context_OnPropertyChanged;
     }

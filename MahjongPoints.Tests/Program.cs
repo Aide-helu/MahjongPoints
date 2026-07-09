@@ -1,3 +1,8 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Data;
+using Avalonia.Platform;
+using MahjongPoints;
 using MahjongPoints.Models;
 using MahjongPoints.Services;
 using MahjongPoints.Services.Scoring;
@@ -12,6 +17,21 @@ static void Assert(bool condition, string message)
     {
         throw new Exception(message);
     }
+}
+
+var avaloniaInitialized = false;
+
+void EnsureAvaloniaInitialized()
+{
+    if (avaloniaInitialized)
+    {
+        return;
+    }
+
+    AppBuilder.Configure<App>()
+        .UsePlatformDetect()
+        .SetupWithoutStarting();
+    avaloniaInitialized = true;
 }
 
 static async Task TenpaiTilesIncludeNoYakuShape()
@@ -82,11 +102,77 @@ static void DoraCommandsClampAtZero()
     Assert(vm.ScoringContext.DoraCount == 1, "Increment command should add one dora.");
 }
 
+static void ScoringOptionLabelsOmitQuestionPrefix()
+{
+    var labels = MahjongScoringOptionItem.CreateItems(new MahjongScoringContext())
+        .Select(option => option.DisplayName)
+        .ToArray();
+
+    Assert(labels.Contains("立直"), "Expected option label to omit 是否 prefix.");
+    Assert(!labels.Any(label => label.StartsWith("是否", StringComparison.Ordinal)), "Option labels should not start with 是否.");
+}
+
+static void RiichiShortcutCommandsSetExactCombination()
+{
+    var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
+    vm.ScoringContext.IsOpenHand = true;
+    vm.ScoringContext.IsDoubleRiichi = true;
+
+    vm.SelectRiichiIppatsuTsumoCommand.Execute(null);
+    Assert(vm.ScoringContext.IsRiichi, "立一自 should select riichi.");
+    Assert(vm.ScoringContext.IsIppatsu, "立一自 should select ippatsu.");
+    Assert(vm.ScoringContext.IsTsumo, "立一自 should select tsumo.");
+    Assert(!vm.ScoringContext.IsOpenHand, "Riichi shortcuts should clear open hand.");
+    Assert(!vm.ScoringContext.IsDoubleRiichi, "Riichi shortcuts should clear double riichi.");
+
+    vm.SelectRiichiIppatsuCommand.Execute(null);
+    Assert(vm.ScoringContext.IsRiichi, "立一 should select riichi.");
+    Assert(vm.ScoringContext.IsIppatsu, "立一 should select ippatsu.");
+    Assert(!vm.ScoringContext.IsTsumo, "立一 should clear tsumo.");
+
+    vm.SelectRiichiTsumoCommand.Execute(null);
+    Assert(vm.ScoringContext.IsRiichi, "立自 should select riichi.");
+    Assert(!vm.ScoringContext.IsIppatsu, "立自 should clear ippatsu.");
+    Assert(vm.ScoringContext.IsTsumo, "立自 should select tsumo.");
+}
+
+static void TileImagePathsFollowAssetNames()
+{
+    Assert(T("1m").ImagePath == "avares://MahjongPoints/Images/manzu/m_1.png", "1m should map to manzu image.");
+    Assert(T("9p").ImagePath == "avares://MahjongPoints/Images/pinzu/p_9.png", "9p should map to pinzu image.");
+    Assert(T("5s").ImagePath == "avares://MahjongPoints/Images/sozu/s_5.png", "5s should map to sozu image.");
+    Assert(T("7z").ImagePath == "avares://MahjongPoints/Images/tupai/z_7.png", "7z should map to honor image.");
+    Assert(T("unknown").ImagePath == "avares://MahjongPoints/Images/tupai/z_5.png", "Unknown tile should use blank tile image.");
+}
+
+void TileImageAssetsExist()
+{
+    EnsureAvaloniaInitialized();
+
+    Assert(AssetLoader.Exists(new Uri(T("1m").ImagePath)), "1m image asset should exist.");
+    Assert(AssetLoader.Exists(new Uri(T("7z").ImagePath)), "7z image asset should exist.");
+}
+
+void TileImageBindingLoadsSource()
+{
+    EnsureAvaloniaInitialized();
+
+    var image = new Image { DataContext = T("1m") };
+    image.Bind(Image.SourceProperty, new Binding(nameof(RecognizedMahjongTile.TileImage)));
+
+    Assert(image.Source is not null, "Image.Source should load from bound TileImage.");
+}
+
 await TenpaiTilesIncludeNoYakuShape();
 DoraAddsFanButNotFu();
 DoraDoesNotCreateYaku();
 await HighestScoringShapeWins();
 DoraCommandsClampAtZero();
+ScoringOptionLabelsOmitQuestionPrefix();
+RiichiShortcutCommandsSetExactCombination();
+TileImagePathsFollowAssetNames();
+TileImageAssetsExist();
+TileImageBindingLoadsSource();
 
 Console.WriteLine("MahjongPoints core tests passed.");
 
