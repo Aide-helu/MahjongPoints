@@ -23,11 +23,16 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         </Style>
         <Style Selector="Border.tile-card">
+            <Setter Property="Width" Value="86"/>
+            <Setter Property="Height" Value="108"/>
             <Setter Property="Padding" Value="6"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background" Value="White"/>
             <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Image.tile-image">
+            <Setter Property="Stretch" Value="Uniform"/>
         </Style>
         <Style Selector="ListBoxItem:selected Border.tile-card">
             <Setter Property="BorderBrush" Value="#2E90FA"/>
@@ -79,116 +84,110 @@
                         Background="#F7F8FA"
                         CornerRadius="4"
                         Padding="8">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalAlignment="Stretch"
-                              HorizontalAlignment="Stretch">
-                    <Grid>
-                <StackPanel Spacing="8"
-                            IsVisible="{Binding IsWinningTileMode}">
-                    <TextBlock Text="识别出的 14 张胡牌"
-                               FontSize="16"
-                               FontWeight="SemiBold"/>
-                    <ListBox ItemsSource="{Binding RecognizedTiles}"
-                             SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
-                             SelectionMode="Single"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Padding="0">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Classes="tile-card"
-                                        Width="86"
-                                        Height="108">
-                                    <Image Source="{Binding TileImage}"
-                                           Stretch="Uniform"/>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalAlignment="Stretch"
+                                  HorizontalAlignment="Stretch">
+                        <Grid>
+                            <StackPanel Spacing="8"
+                                        IsVisible="{Binding IsWinningTileMode}">
+                                <TextBlock Text="识别出的 14 张胡牌"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+                                <ListBox ItemsSource="{Binding RecognizedTiles}"
+                                         SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
+                                         SelectionMode="Single"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="0">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="tile-card">
+                                                <Image Classes="tile-image"
+                                                       Source="{Binding TileImage}"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
 
-                <StackPanel Spacing="8"
-                            IsVisible="{Binding IsTenpaiMode}">
-                    <TextBlock Text="叫听牌"
-                               FontSize="16"
-                               FontWeight="SemiBold"/>
-                    <ListBox ItemsSource="{Binding TenpaiTiles}"
-                             SelectedItem="{Binding SelectedTenpaiTile, Mode=TwoWay}"
-                             SelectionMode="Single"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Padding="0">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Classes="tile-card"
-                                        Width="86"
-                                        Height="108">
-                                    <Image Source="{Binding TileImage}"
-                                           Stretch="Uniform"/>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
+                            <StackPanel Spacing="8"
+                                        IsVisible="{Binding IsTenpaiMode}">
+                                <TextBlock Text="叫听牌"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+                                <ListBox ItemsSource="{Binding TenpaiTiles}"
+                                         SelectedItem="{Binding SelectedTenpaiTile, Mode=TwoWay}"
+                                         SelectionMode="Single"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="0">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="tile-card">
+                                                <Image Classes="tile-image"
+                                                       Source="{Binding TileImage}"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
 
-                <StackPanel Spacing="8"
-                            IsVisible="{Binding IsDiscardTenpaiMode}">
-                    <TextBlock Text="打出后可听"
-                               FontSize="16"
-                               FontWeight="SemiBold"/>
-                    <ItemsControl ItemsSource="{Binding TenpaiDiscardOptions}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Spacing="6" Margin="0,0,0,10">
-                                        <TextBlock Text="{Binding DiscardText}"
-                                                   FontWeight="SemiBold"
-                                                   TextWrapping="Wrap"/>
-                                        <ItemsControl ItemsSource="{Binding WinningOptions}"
-                                                      MinHeight="116">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border Classes="tile-card"
-                                                            BorderBrush="{Binding SelectionBorderBrush}"
-                                                            BorderThickness="{Binding SelectionBorderThickness}"
-                                                            Width="86"
-                                                            Height="108"
-                                                            MinHeight="108"
-                                                            PointerPressed="TenpaiDiscardWinningOption_OnPointerPressed">
-                                                        <Image Source="{Binding WinningTile.TileImage}"
-                                                               MinHeight="92"
-                                                               Stretch="Uniform"/>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-                    </Grid>
-                </ScrollViewer>
+                            <StackPanel Spacing="8"
+                                        IsVisible="{Binding IsDiscardTenpaiMode}">
+                                <TextBlock Text="打出后可听"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"/>
+                                <ItemsControl ItemsSource="{Binding TenpaiDiscardOptions}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Spacing="6" Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding DiscardText}"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"/>
+                                                <ItemsControl ItemsSource="{Binding WinningOptions}"
+                                                              MinHeight="116">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Classes="tile-card"
+                                                                    BorderBrush="{Binding SelectionBorderBrush}"
+                                                                    BorderThickness="{Binding SelectionBorderThickness}"
+                                                                    MinHeight="108"
+                                                                    PointerPressed="TenpaiDiscardWinningOption_OnPointerPressed">
+                                                                <Image Classes="tile-image"
+                                                                       Source="{Binding WinningTile.TileImage}"
+                                                                       MinHeight="92"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
                 </Border>
             </Grid>
 

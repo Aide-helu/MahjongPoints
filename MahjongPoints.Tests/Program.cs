@@ -11,6 +11,8 @@ using MahjongPoints.ViewModels;
 
 static RecognizedMahjongTile T(string code) => new(code, code, 1);
 static RecognizedMahjongTile[] Tiles(params string[] codes) => codes.Select(T).ToArray();
+static TenpaiDiscardWinningOption[] DiscardWinningOptions(MainWindowViewModel vm) =>
+    vm.TenpaiDiscardOptions.SelectMany(option => option.WinningOptions).ToArray();
 
 static void Assert(bool condition, string message)
 {
@@ -135,7 +137,7 @@ async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
         vm.IsDiscardTenpaiMode,
         $"A 14-tile non-winning hand with useful discards should show discard-tenpai options. Count={vm.TenpaiDiscardOptions.Count}, Recognized={vm.RecognizedTiles.Count}, Status={vm.StatusMessage}");
     Assert(vm.TenpaiDiscardOptions.Count == 1, "Expected one discard-tenpai option in the selectable area.");
-    Assert(vm.TenpaiDiscardWinningOptions.Count == 1, "Expected one selectable discard plus winning tile option.");
+    Assert(DiscardWinningOptions(vm).Length == 1, "Expected one selectable discard plus winning tile option.");
     Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("1z", StringComparison.Ordinal), "Discard option should name the discarded tile.");
     Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("9m", StringComparison.Ordinal), "Discard option should list the wait tiles.");
 }
@@ -165,7 +167,8 @@ async Task ViewModelCalculatesSelectedDiscardWinningTile()
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
 
     await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
-    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[0]);
+    var options = DiscardWinningOptions(vm);
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[0]);
 
     Assert(scoringService.LastCalculationTiles.Select(tile => tile.Code).SequenceEqual(remainingTiles.Select(tile => tile.Code)), "Selected discard wait should calculate with the 13 tiles left after discarding.");
     Assert(scoringService.LastWinningTileCode == "9m", "Selected discard wait should calculate with the selected winning tile.");
@@ -190,11 +193,12 @@ async Task ViewModelKeepsOneSelectedDiscardWinningTile()
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
 
     await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
-    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[0]);
-    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[1]);
+    var options = DiscardWinningOptions(vm);
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[0]);
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[1]);
 
-    Assert(vm.TenpaiDiscardWinningOptions.Count(option => option.IsSelected) == 1, "Only one discard-winning tile should be selected across all discard groups.");
-    Assert(ReferenceEquals(vm.SelectedTenpaiDiscardWinningOption, vm.TenpaiDiscardWinningOptions[1]), "The latest clicked discard-winning tile should be the selected option.");
+    Assert(DiscardWinningOptions(vm).Count(option => option.IsSelected) == 1, "Only one discard-winning tile should be selected across all discard groups.");
+    Assert(ReferenceEquals(vm.SelectedTenpaiDiscardWinningOption, options[1]), "The latest clicked discard-winning tile should be the selected option.");
 }
 
 static void DiscardWinningOptionSelectionChangesBorder()

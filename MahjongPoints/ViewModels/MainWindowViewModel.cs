@@ -96,8 +96,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public ObservableCollection<TenpaiDiscardOption> TenpaiDiscardOptions { get; } = [];
 
-    public ObservableCollection<TenpaiDiscardWinningOption> TenpaiDiscardWinningOptions { get; } = [];
-
     /// <summary>
     /// 用户当前选择的胡牌状态和算点环境。
     /// </summary>
@@ -436,7 +434,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         TenpaiTiles.Clear();
         TenpaiDiscardOptions.Clear();
-        TenpaiDiscardWinningOptions.Clear();
         SelectedTenpaiDiscardWinningOption = null;
         IsTenpaiMode = recognizedTiles.Count == 13;
         IsWinningTileMode = recognizedTiles.Count == 14;
@@ -466,27 +463,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         TenpaiTiles.Clear();
         TenpaiDiscardOptions.Clear();
-        TenpaiDiscardWinningOptions.Clear();
         SelectedTenpaiTile = null;
         SelectedTenpaiDiscardWinningOption = null;
 
         foreach (var option in _scoringService.FindTenpaiDiscardOptions(recognizedTiles))
         {
             TenpaiDiscardOptions.Add(option);
-            foreach (var winningOption in option.WinningOptions)
-            {
-                TenpaiDiscardWinningOptions.Add(winningOption);
-            }
         }
 
         IsWinningTileMode = false;
         IsTenpaiMode = false;
-        IsDiscardTenpaiMode = TenpaiDiscardWinningOptions.Count > 0;
+        IsDiscardTenpaiMode = TenpaiDiscardOptions.Any(option => option.WinningOptions.Count > 0);
     }
 
     private void RefreshTenpaiDiscardWinningSelection(TenpaiDiscardWinningOption? selectedOption)
     {
-        foreach (var option in TenpaiDiscardWinningOptions)
+        foreach (var option in TenpaiDiscardOptions.SelectMany(discardOption => discardOption.WinningOptions))
         {
             option.IsSelected = ReferenceEquals(option, selectedOption);
         }
@@ -599,7 +591,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecognizedTiles.Clear();
         TenpaiTiles.Clear();
         TenpaiDiscardOptions.Clear();
-        TenpaiDiscardWinningOptions.Clear();
         ScoringContext.SelectedOpenMelds = [];
         SelectedTenpaiTile = null;
         SelectedTenpaiDiscardWinningOption = null;

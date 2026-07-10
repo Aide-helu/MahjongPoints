@@ -22,7 +22,7 @@
         <mxCell id="n6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#0F172A;" value="用户选择未来和哪张牌&lt;br&gt;SelectedTenpaiTile -&gt; WinningTile" vertex="1">
           <mxGeometry height="70" width="250" x="1210" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="n7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#0F172A;" value="14 张：显示识别牌&lt;br&gt;用户选择哪张是和牌张" vertex="1">
+        <mxCell id="n7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#0F172A;" value="14 张：先尝试按和牌算点&lt;br&gt;默认最后一张为和牌张&lt;br&gt;非胡牌时进入弃牌听牌" vertex="1">
           <mxGeometry height="70" width="260" x="860" y="230" as="geometry" />
         </mxCell>
         <mxCell id="n8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#EF4444;fontColor=#7F1D1D;" value="其它牌数：无法进入正常算点&lt;br&gt;显示当前状态" vertex="1">
@@ -63,6 +63,15 @@
         </mxCell>
         <mxCell id="n20" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;" value="ApplyScoringResult&lt;br&gt;显示点数、和牌张、牌型&lt;br&gt;胡无役牌时显示无役" vertex="1">
           <mxGeometry height="90" width="250" x="1260" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="n21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF3;strokeColor=#12B76A;fontColor=#064E3B;" value="14 张非胡牌：FindTenpaiDiscardOptions&lt;br&gt;逐张移除一张后复用 FindTenpaiTiles" vertex="1">
+          <mxGeometry height="80" width="290" x="1160" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="n22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#0F172A;" value="按弃牌分组显示&lt;br&gt;打出 X：可胡牌网格" vertex="1">
+          <mxGeometry height="70" width="230" x="1200" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="n23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;fontColor=#0F172A;" value="选择可胡牌&lt;br&gt;RemainingTiles + WinningTile&lt;br&gt;重新 CalculateAsync" vertex="1">
+          <mxGeometry height="90" width="250" x="1200" y="560" as="geometry" />
         </mxCell>
         <mxCell id="e1" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n2">
           <mxGeometry relative="1" as="geometry" />
@@ -142,6 +151,23 @@
         </mxCell>
         <mxCell id="e20" edge="1" parent="1" source="n19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n20">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" edge="1" parent="1" source="n20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n21" value="14 张且非胡牌">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" edge="1" parent="1" source="n21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="n22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" edge="1" parent="1" source="n23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#667085;" target="n10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1325" y="660" />
+              <mxPoint x="165" y="660" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
