@@ -62,18 +62,29 @@
 
         <!--定义两列，第一列占3*，第二列占2*，两列边距设置为16-->
         <Grid Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="16">
-            <Grid RowDefinitions="*,Auto" RowSpacing="12">
+            <Grid RowDefinitions="100,*" RowSpacing="12">
                 <Border BorderBrush="#D0D5DD"
                         BorderThickness="3"
                         Background="#F7F8FA"
                         CornerRadius="8"
-                        Padding="8">
+                        Padding="8"
+                        Height="100">
                     <Image Source="{Binding PreviewImage}"
                            Stretch="Uniform"/>
                 </Border>
 
-                <StackPanel Grid.Row="1"
-                            Spacing="8"
+                <Border Grid.Row="1"
+                        BorderBrush="#D0D5DD"
+                        BorderThickness="1"
+                        Background="#F7F8FA"
+                        CornerRadius="4"
+                        Padding="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalAlignment="Stretch"
+                              HorizontalAlignment="Stretch">
+                    <Grid>
+                <StackPanel Spacing="8"
                             IsVisible="{Binding IsWinningTileMode}">
                     <TextBlock Text="识别出的 14 张胡牌"
                                FontSize="16"
@@ -102,8 +113,7 @@
                     </ListBox>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1"
-                            Spacing="8"
+                <StackPanel Spacing="8"
                             IsVisible="{Binding IsTenpaiMode}">
                     <TextBlock Text="叫听牌"
                                FontSize="16"
@@ -131,6 +141,55 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </StackPanel>
+
+                <StackPanel Spacing="8"
+                            IsVisible="{Binding IsDiscardTenpaiMode}">
+                    <TextBlock Text="打出后可听"
+                               FontSize="16"
+                               FontWeight="SemiBold"/>
+                    <ItemsControl ItemsSource="{Binding TenpaiDiscardOptions}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Spacing="6" Margin="0,0,0,10">
+                                        <TextBlock Text="{Binding DiscardText}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"/>
+                                        <ItemsControl ItemsSource="{Binding WinningOptions}"
+                                                      MinHeight="116">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Classes="tile-card"
+                                                            BorderBrush="{Binding SelectionBorderBrush}"
+                                                            BorderThickness="{Binding SelectionBorderThickness}"
+                                                            Width="86"
+                                                            Height="108"
+                                                            MinHeight="108"
+                                                            PointerPressed="TenpaiDiscardWinningOption_OnPointerPressed">
+                                                        <Image Source="{Binding WinningTile.TileImage}"
+                                                               MinHeight="92"
+                                                               Stretch="Uniform"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+                </Border>
             </Grid>
 
             <ScrollViewer Grid.Column="1">

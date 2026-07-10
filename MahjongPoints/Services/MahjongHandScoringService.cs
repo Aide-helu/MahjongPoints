@@ -101,6 +101,27 @@ public sealed class MahjongHandScoringService : IHandScoringService
         return results;
     }
 
+    public IReadOnlyList<TenpaiDiscardOption> FindTenpaiDiscardOptions(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
+    {
+        if (recognizedTiles.Count != 14)
+        {
+            return [];
+        }
+
+        var results = new List<TenpaiDiscardOption>();
+        foreach (var discardTile in recognizedTiles.DistinctBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase))
+        {
+            var remainingTiles = RemoveOneTile(recognizedTiles, discardTile.Code);
+            var winningTiles = FindTenpaiTiles(remainingTiles);
+            if (winningTiles.Count > 0)
+            {
+                results.Add(new TenpaiDiscardOption(discardTile, winningTiles, remainingTiles));
+            }
+        }
+
+        return results;
+    }
+
     /// <summary>
     /// 把识别出的 14 张胡牌状态手牌依次送入拆牌、判役、算符和算点流程。
     /// </summary>
@@ -238,6 +259,26 @@ public sealed class MahjongHandScoringService : IHandScoringService
 
     private static RecognizedMahjongTile CreateTile(string code) =>
         new(code, GetTileDisplayName(code), 1);
+
+    private static IReadOnlyList<RecognizedMahjongTile> RemoveOneTile(
+        IReadOnlyList<RecognizedMahjongTile> tiles,
+        string code)
+    {
+        var removed = false;
+        var results = new List<RecognizedMahjongTile>(tiles.Count - 1);
+        foreach (var tile in tiles)
+        {
+            if (!removed && string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase))
+            {
+                removed = true;
+                continue;
+            }
+
+            results.Add(tile);
+        }
+
+        return results;
+    }
 
     private static bool IsKnownTile(RecognizedMahjongTile tile) =>
         _allTileCodes.Contains(tile.Code, StringComparer.OrdinalIgnoreCase);

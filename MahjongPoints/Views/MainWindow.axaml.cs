@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using MahjongPoints.Models;
 using MahjongPoints.ViewModels;
 using MahjongPoints.Services.Scoring;
 
@@ -130,6 +132,18 @@ public partial class MainWindow : Window
         {
             viewModel.StatusMessage = ex.Message;
         }
+    }
+
+    private async void TenpaiDiscardWinningOption_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control { DataContext: TenpaiDiscardWinningOption option } ||
+            DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await viewModel.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(option);
     }
 
     private async void ViewModel_OpenMeldSelectionRequested(object? sender, EventArgs e)

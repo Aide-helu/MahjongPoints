@@ -79,7 +79,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isWinningTileMode;
 
     [ObservableProperty]
+    private bool _isDiscardTenpaiMode;
+
+    [ObservableProperty]
     private RecognizedMahjongTile? _selectedTenpaiTile;
+
+    [ObservableProperty]
+    private TenpaiDiscardWinningOption? _selectedTenpaiDiscardWinningOption;
 
     /// <summary>
     /// 界面展示的识别牌集合。
@@ -87,6 +93,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public ObservableCollection<RecognizedMahjongTile> RecognizedTiles { get; } = [];
 
     public ObservableCollection<RecognizedMahjongTile> TenpaiTiles { get; } = [];
+
+    public ObservableCollection<TenpaiDiscardOption> TenpaiDiscardOptions { get; } = [];
+
+    public ObservableCollection<TenpaiDiscardWinningOption> TenpaiDiscardWinningOptions { get; } = [];
 
     /// <summary>
     /// 用户当前选择的胡牌状态和算点环境。
@@ -232,6 +242,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 recognitionResult.Tiles,
                 ScoringContext,
                 cancellationToken);
+
+            if (recognitionResult.Tiles.Count == 14 && !scoringResult.IsWinningHand)
+            {
+                PrepareDiscardTenpaiSelection(recognitionResult.Tiles);
+            }
             
             //界面结果显示
             ApplyScoringResult(scoringResult);
@@ -379,11 +394,53 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    partial void OnSelectedTenpaiDiscardWinningOptionChanged(TenpaiDiscardWinningOption? value)
+    {
+        RefreshTenpaiDiscardWinningSelection(value);
+    }
+
+    [RelayCommand]
+    private async Task SelectTenpaiDiscardWinningOptionAsync(TenpaiDiscardWinningOption? option)
+    {
+        if (option is null)
+        {
+            return;
+        }
+
+        SelectedTenpaiDiscardWinningOption = option;
+        IsBusy = true;
+        StatusMessage = "正在根据选择的听牌重新算点...";
+
+        try
+        {
+            ScoringContext.WinningTile = option.WinningTile;
+            var scoringResult = await _scoringService.CalculateAsync(
+                option.RemainingTiles,
+                ScoringContext);
+
+            ApplyScoringResult(scoringResult);
+            StatusMessage = "算点完成。";
+        }
+        catch (Exception ex)
+        {
+            ScoreSummary = "算点失败";
+            StatusMessage = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private void PrepareTileSelection(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
     {
         TenpaiTiles.Clear();
+        TenpaiDiscardOptions.Clear();
+        TenpaiDiscardWinningOptions.Clear();
+        SelectedTenpaiDiscardWinningOption = null;
         IsTenpaiMode = recognizedTiles.Count == 13;
         IsWinningTileMode = recognizedTiles.Count == 14;
+        IsDiscardTenpaiMode = false;
 
         if (IsTenpaiMode)
         {
@@ -403,6 +460,36 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         SelectedTenpaiTile = null;
         SelectDefaultWinningTile(recognizedTiles);
+    }
+
+    private void PrepareDiscardTenpaiSelection(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
+    {
+        TenpaiTiles.Clear();
+        TenpaiDiscardOptions.Clear();
+        TenpaiDiscardWinningOptions.Clear();
+        SelectedTenpaiTile = null;
+        SelectedTenpaiDiscardWinningOption = null;
+
+        foreach (var option in _scoringService.FindTenpaiDiscardOptions(recognizedTiles))
+        {
+            TenpaiDiscardOptions.Add(option);
+            foreach (var winningOption in option.WinningOptions)
+            {
+                TenpaiDiscardWinningOptions.Add(winningOption);
+            }
+        }
+
+        IsWinningTileMode = false;
+        IsTenpaiMode = false;
+        IsDiscardTenpaiMode = TenpaiDiscardWinningOptions.Count > 0;
+    }
+
+    private void RefreshTenpaiDiscardWinningSelection(TenpaiDiscardWinningOption? selectedOption)
+    {
+        foreach (var option in TenpaiDiscardWinningOptions)
+        {
+            option.IsSelected = ReferenceEquals(option, selectedOption);
+        }
     }
 
     /// <summary>
@@ -430,7 +517,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
-            var recognizedTiles = new List<RecognizedMahjongTile>(RecognizedTiles);
+            var recognizedTiles = IsDiscardTenpaiMode && SelectedTenpaiDiscardWinningOption is not null
+                ? SelectedTenpaiDiscardWinningOption.RemainingTiles
+                : new List<RecognizedMahjongTile>(RecognizedTiles);
             var scoringResult = await _scoringService.CalculateAsync(
                 recognizedTiles,
                 ScoringContext);
@@ -509,10 +598,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         RecognizedTiles.Clear();
         TenpaiTiles.Clear();
+        TenpaiDiscardOptions.Clear();
+        TenpaiDiscardWinningOptions.Clear();
         ScoringContext.SelectedOpenMelds = [];
         SelectedTenpaiTile = null;
+        SelectedTenpaiDiscardWinningOption = null;
         IsTenpaiMode = false;
         IsWinningTileMode = false;
+        IsDiscardTenpaiMode = false;
         ScoreSummary = "等待算点";
         WinningTileText = "胡牌张：未计算";
         WinningShape = "牌型：未计算";

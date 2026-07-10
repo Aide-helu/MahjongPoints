@@ -13,6 +13,8 @@ public interface IHandScoringService
 {
     IReadOnlyList<RecognizedMahjongTile> FindTenpaiTiles(IReadOnlyList<RecognizedMahjongTile> recognizedTiles);
 
+    IReadOnlyList<TenpaiDiscardOption> FindTenpaiDiscardOptions(IReadOnlyList<RecognizedMahjongTile> recognizedTiles);
+
     /// <summary>
     /// 根据识别出的手牌计算和牌结果与点数。
     /// </summary>

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
+using Avalonia.Media;
 using Avalonia.Platform;
 using MahjongPoints;
 using MahjongPoints.Models;
@@ -93,6 +94,121 @@ static async Task HighestScoringShapeWins()
     Assert(result.WinningShape == highSplit.DisplayText, "Expected selected shape to match the highest-scoring split.");
 }
 
+static void FourteenTilesFindDiscardOptionsByReusingTenpaiSearch()
+{
+    var service = new MahjongHandScoringService();
+    var options = service.FindTenpaiDiscardOptions(Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z"));
+
+    var discard1z = options.FirstOrDefault(option => option.DiscardTile.Code == "1z");
+
+    Assert(discard1z is not null, "Discarding 1z should leave a 13-tile tenpai shape.");
+    Assert(discard1z!.WinningTiles.Any(tile => tile.Code == "9m"), "Discarding 1z should show 9m as a wait.");
+    Assert(discard1z.RemainingTiles.Count == 13, "Discard option should keep the 13 tiles left after discarding.");
+    Assert(!discard1z.RemainingTiles.Any(tile => tile.Code == "1z"), "Discard option remaining tiles should remove one discarded tile.");
+}
+
+async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z");
+    var vm = new MainWindowViewModel(
+        new FakeRecognizer(tiles),
+        new FakeHandScoringService(
+            new MahjongScoringResult(T("unknown"), false, "No valid hand split.", "No valid hand split.", 0, 0, 0),
+            [new TenpaiDiscardOption(T("1z"), [T("9m")], tiles.Where(tile => tile.Code != "1z").ToArray())]));
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+
+    Assert(!vm.IsWinningTileMode, "A 14-tile non-winning hand should not stay in winning-tile selection mode.");
+    Assert(
+        vm.IsDiscardTenpaiMode,
+        $"A 14-tile non-winning hand with useful discards should show discard-tenpai options. Count={vm.TenpaiDiscardOptions.Count}, Recognized={vm.RecognizedTiles.Count}, Status={vm.StatusMessage}");
+    Assert(vm.TenpaiDiscardOptions.Count == 1, "Expected one discard-tenpai option in the selectable area.");
+    Assert(vm.TenpaiDiscardWinningOptions.Count == 1, "Expected one selectable discard plus winning tile option.");
+    Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("1z", StringComparison.Ordinal), "Discard option should name the discarded tile.");
+    Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("9m", StringComparison.Ordinal), "Discard option should list the wait tiles.");
+}
+
+async Task ViewModelCalculatesSelectedDiscardWinningTile()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z");
+    var remainingTiles = tiles.Where(tile => tile.Code != "1z").ToArray();
+    var calculationCount = 0;
+    var scoringService = new FakeHandScoringService(
+        new MahjongScoringResult(T("unknown"), false, "No valid hand split.", "No valid hand split.", 0, 0, 0),
+        [new TenpaiDiscardOption(T("1z"), [T("9m")], remainingTiles)],
+        (calculationTiles, context) =>
+        {
+            calculationCount++;
+            return calculationCount == 1
+                ? new MahjongScoringResult(T("unknown"), false, "No valid hand split.", "No valid hand split.", 0, 0, 0)
+                : new MahjongScoringResult(context.WinningTile, true, "selected", "Selected score", 1, 30, 1000);
+        });
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[0]);
+
+    Assert(scoringService.LastCalculationTiles.Select(tile => tile.Code).SequenceEqual(remainingTiles.Select(tile => tile.Code)), "Selected discard wait should calculate with the 13 tiles left after discarding.");
+    Assert(scoringService.LastWinningTileCode == "9m", "Selected discard wait should calculate with the selected winning tile.");
+    Assert(vm.ScoreSummary == "Selected score", "Selecting a discard wait should update the score summary.");
+}
+
+async Task ViewModelKeepsOneSelectedDiscardWinningTile()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z");
+    var discard1z = new TenpaiDiscardOption(T("1z"), [T("9m")], tiles.Where(tile => tile.Code != "1z").ToArray());
+    var discard9m = new TenpaiDiscardOption(T("9m"), [T("1z")], tiles.Where(tile => tile.Code != "9m").ToArray());
+    var scoringService = new FakeHandScoringService(
+        new MahjongScoringResult(T("unknown"), false, "No valid hand split.", "No valid hand split.", 0, 0, 0),
+        [discard1z, discard9m]);
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[0]);
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(vm.TenpaiDiscardWinningOptions[1]);
+
+    Assert(vm.TenpaiDiscardWinningOptions.Count(option => option.IsSelected) == 1, "Only one discard-winning tile should be selected across all discard groups.");
+    Assert(ReferenceEquals(vm.SelectedTenpaiDiscardWinningOption, vm.TenpaiDiscardWinningOptions[1]), "The latest clicked discard-winning tile should be the selected option.");
+}
+
+static void DiscardWinningOptionSelectionChangesBorder()
+{
+    var option = new TenpaiDiscardWinningOption(T("1z"), T("9m"), []);
+
+    Assert(option.SelectionBorderThickness.Left == 0, "Unselected discard-winning tile should not have a visible border.");
+
+    option.IsSelected = true;
+
+    Assert(option.SelectionBorderThickness.Left == 4, "Selected discard-winning tile should have a visible border.");
+    Assert(ReferenceEquals(option.SelectionBorderBrush, Brushes.DodgerBlue), "Selected discard-winning tile should use the blue selection brush.");
+}
+
 static void DoraCommandsClampAtZero()
 {
     var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
@@ -167,6 +283,11 @@ await TenpaiTilesIncludeNoYakuShape();
 DoraAddsFanButNotFu();
 DoraDoesNotCreateYaku();
 await HighestScoringShapeWins();
+FourteenTilesFindDiscardOptionsByReusingTenpaiSearch();
+await ViewModelShowsDiscardOptionsForFourteenNonWinningTiles();
+await ViewModelCalculatesSelectedDiscardWinningTile();
+await ViewModelKeepsOneSelectedDiscardWinningTile();
+DiscardWinningOptionSelectionChangesBorder();
 DoraCommandsClampAtZero();
 ScoringOptionLabelsOmitQuestionPrefix();
 RiichiShortcutCommandsSetExactCombination();
@@ -220,19 +341,33 @@ sealed class FakeScoreCalculator : IScoreCalculator
     }
 }
 
-sealed class FakeRecognizer : IHandImageRecognizer
+sealed class FakeRecognizer(IReadOnlyList<RecognizedMahjongTile>? tiles = null) : IHandImageRecognizer
 {
     public Task<MahjongHandRecognitionResult> RecognizeAsync(string imagePath, CancellationToken cancellationToken = default) =>
-        Task.FromResult(new MahjongHandRecognitionResult([], "fake", "fake", "fake"));
+        Task.FromResult(new MahjongHandRecognitionResult(tiles ?? [], "fake", "fake", "fake"));
 }
 
-sealed class FakeHandScoringService : IHandScoringService
+sealed class FakeHandScoringService(
+    MahjongScoringResult? result = null,
+    IReadOnlyList<TenpaiDiscardOption>? discardOptions = null,
+    Func<IReadOnlyList<RecognizedMahjongTile>, MahjongScoringContext, MahjongScoringResult>? calculate = null) : IHandScoringService
 {
+    public IReadOnlyList<RecognizedMahjongTile> LastCalculationTiles { get; private set; } = [];
+
+    public string LastWinningTileCode { get; private set; } = "";
+
     public IReadOnlyList<RecognizedMahjongTile> FindTenpaiTiles(IReadOnlyList<RecognizedMahjongTile> recognizedTiles) => [new("4s", "4s", 1)];
+
+    public IReadOnlyList<TenpaiDiscardOption> FindTenpaiDiscardOptions(IReadOnlyList<RecognizedMahjongTile> recognizedTiles) =>
+        discardOptions ?? [];
 
     public Task<MahjongScoringResult> CalculateAsync(
         IReadOnlyList<RecognizedMahjongTile> recognizedTiles,
         MahjongScoringContext context,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new MahjongScoringResult(context.WinningTile, false, "shape", "No yaku", 0, 0, 0));
+        CancellationToken cancellationToken = default)
+    {
+        LastCalculationTiles = recognizedTiles.ToArray();
+        LastWinningTileCode = context.WinningTile.Code;
+        return Task.FromResult(calculate?.Invoke(recognizedTiles, context) ?? result ?? new MahjongScoringResult(context.WinningTile, false, "shape", "No yaku", 0, 0, 0));
+    }
 }
