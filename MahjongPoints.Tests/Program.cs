@@ -256,6 +256,28 @@ static void RiichiShortcutCommandsSetExactCombination()
     Assert(vm.ScoringContext.IsTsumo, "立自 should select tsumo.");
 }
 
+static void OpenHandShortcutCommandsSetExactCombination()
+{
+    var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
+    vm.ScoringContext.IsRiichi = true;
+    vm.ScoringContext.IsDoubleRiichi = true;
+    vm.ScoringContext.IsIppatsu = true;
+
+    vm.SelectOpenTsumoCommand.Execute(null);
+    Assert(vm.ScoringContext.IsOpenHand, "副自 should select open hand.");
+    Assert(vm.ScoringContext.IsTsumo, "副自 should select tsumo.");
+    Assert(!vm.ScoringContext.IsRiichi, "副自 should clear riichi.");
+    Assert(!vm.ScoringContext.IsDoubleRiichi, "副自 should clear double riichi.");
+    Assert(!vm.ScoringContext.IsIppatsu, "副自 should clear ippatsu.");
+
+    vm.SelectOpenRonCommand.Execute(null);
+    Assert(vm.ScoringContext.IsOpenHand, "副荣 should select open hand.");
+    Assert(!vm.ScoringContext.IsTsumo, "副荣 should clear tsumo.");
+    Assert(!vm.ScoringContext.IsRiichi, "副荣 should keep riichi cleared.");
+    Assert(!vm.ScoringContext.IsDoubleRiichi, "副荣 should keep double riichi cleared.");
+    Assert(!vm.ScoringContext.IsIppatsu, "副荣 should keep ippatsu cleared.");
+}
+
 static void TileImagePathsFollowAssetNames()
 {
     Assert(T("1m").ImagePath == "avares://MahjongPoints/Images/manzu/m_1.png", "1m should map to manzu image.");
@@ -295,6 +317,7 @@ DiscardWinningOptionSelectionChangesBorder();
 DoraCommandsClampAtZero();
 ScoringOptionLabelsOmitQuestionPrefix();
 RiichiShortcutCommandsSetExactCombination();
+OpenHandShortcutCommandsSetExactCombination();
 TileImagePathsFollowAssetNames();
 TileImageAssetsExist();
 TileImageBindingLoadsSource();

@@ -237,6 +237,12 @@
                                 <Button Content="立自"
                                         Padding="12,6"
                                         Command="{Binding SelectRiichiTsumoCommand}"/>
+                                <Button Content="副自"
+                                        Padding="12,6"
+                                        Command="{Binding SelectOpenTsumoCommand}"/>
+                                <Button Content="副荣"
+                                        Padding="12,6"
+                                        Command="{Binding SelectOpenRonCommand}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <StackPanel Width="120" Spacing="4">

@@ -375,12 +375,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ApplyRiichiShortcut(isIppatsu: false, isTsumo: true);
     }
 
+    [RelayCommand]
+    private void SelectOpenTsumo()
+    {
+        ApplyOpenHandShortcut(isTsumo: true);
+    }
+
+    [RelayCommand]
+    private void SelectOpenRon()
+    {
+        ApplyOpenHandShortcut(isTsumo: false);
+    }
+
     private void ApplyRiichiShortcut(bool isIppatsu, bool isTsumo)
     {
         ScoringContext.IsOpenHand = false;
         ScoringContext.IsDoubleRiichi = false;
         ScoringContext.IsRiichi = true;
         ScoringContext.IsIppatsu = isIppatsu;
+        ScoringContext.IsTsumo = isTsumo;
+    }
+
+    private void ApplyOpenHandShortcut(bool isTsumo)
+    {
+        ScoringContext.IsRiichi = false;
+        ScoringContext.IsDoubleRiichi = false;
+        ScoringContext.IsIppatsu = false;
+        ScoringContext.IsOpenHand = true;
         ScoringContext.IsTsumo = isTsumo;
     }
 
