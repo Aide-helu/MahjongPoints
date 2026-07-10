@@ -142,6 +142,29 @@ async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
     Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("9m", StringComparison.Ordinal), "Discard option should list the wait tiles.");
 }
 
+async Task ViewModelWaitsForDiscardWinningSelection()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z");
+    var vm = new MainWindowViewModel(
+        new FakeRecognizer(tiles),
+        new FakeHandScoringService(
+            new MahjongScoringResult(T("unknown"), false, "NULL", "NULL", 0, 0, 0),
+            [new TenpaiDiscardOption(T("1z"), [T("9m")], tiles.Where(tile => tile.Code != "1z").ToArray())]));
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+
+    Assert(vm.IsDiscardTenpaiMode, "Discard-tenpai mode should be active.");
+    Assert(vm.ScoreSummary != "NULL", "Discard-tenpai mode should wait for a winning tile instead of showing the initial failed calculation.");
+    Assert(!vm.WinningShape.Contains("NULL", StringComparison.Ordinal), "Discard-tenpai mode should not show the initial failed split result.");
+}
+
 async Task ViewModelCalculatesSelectedDiscardWinningTile()
 {
     EnsureAvaloniaInitialized();
@@ -170,9 +193,30 @@ async Task ViewModelCalculatesSelectedDiscardWinningTile()
     var options = DiscardWinningOptions(vm);
     await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[0]);
 
-    Assert(scoringService.LastCalculationTiles.Select(tile => tile.Code).SequenceEqual(remainingTiles.Select(tile => tile.Code)), "Selected discard wait should calculate with the 13 tiles left after discarding.");
+    Assert(scoringService.LastCalculationTiles.Select(tile => tile.Code).SequenceEqual(remainingTiles.Select(tile => tile.Code).Concat(["9m"])), "Selected discard wait should calculate with the 14-tile hand after adding the selected winning tile.");
     Assert(scoringService.LastWinningTileCode == "9m", "Selected discard wait should calculate with the selected winning tile.");
     Assert(vm.ScoreSummary == "Selected score", "Selecting a discard wait should update the score summary.");
+}
+
+async Task ViewModelFirstDiscardWinningSelectionUsesCompleteHand()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "1m", "1m", "1m",
+        "2p", "3p", "4p",
+        "3s", "4s", "5s",
+        "6s", "7s", "8s",
+        "9m", "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new MahjongHandScoringService());
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    var option = DiscardWinningOptions(vm).First(option => option.DiscardTile.Code == "1z" && option.WinningTile.Code == "9m");
+
+    await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(option);
+
+    Assert(!vm.ScoreSummary.Contains("No valid hand split", StringComparison.OrdinalIgnoreCase), "The first discard-winning selection should calculate from the 14-tile winning hand.");
+    Assert(!vm.WinningShape.Contains("No valid 4 melds", StringComparison.OrdinalIgnoreCase), "The first discard-winning selection should not calculate the 13-tile remaining hand by itself.");
 }
 
 async Task ViewModelKeepsOneSelectedDiscardWinningTile()
@@ -311,7 +355,9 @@ DoraDoesNotCreateYaku();
 await HighestScoringShapeWins();
 FourteenTilesFindDiscardOptionsByReusingTenpaiSearch();
 await ViewModelShowsDiscardOptionsForFourteenNonWinningTiles();
+await ViewModelWaitsForDiscardWinningSelection();
 await ViewModelCalculatesSelectedDiscardWinningTile();
+await ViewModelFirstDiscardWinningSelectionUsesCompleteHand();
 await ViewModelKeepsOneSelectedDiscardWinningTile();
 DiscardWinningOptionSelectionChangesBorder();
 DoraCommandsClampAtZero();
