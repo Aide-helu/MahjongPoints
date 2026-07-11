@@ -291,6 +291,35 @@
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="杠子"
+                                           Foreground="#555"
+                                           FontSize="12"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="+ 暗杠"
+                                            Padding="12,6"
+                                            Command="{Binding AddConcealedKanCommand}"/>
+                                    <Button Content="+ 明杠"
+                                            Padding="12,6"
+                                            Command="{Binding AddOpenKanCommand}"/>
+                                </StackPanel>
+                                <ItemsControl ItemsSource="{Binding DeclaredKans}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel LastChildFill="False" Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding DisplayText}"
+                                                           VerticalAlignment="Center"
+                                                           DockPanel.Dock="Left"/>
+                                                <Button Content="删除"
+                                                        Padding="8,4"
+                                                        Margin="8,0,0,0"
+                                                        DockPanel.Dock="Right"
+                                                        Click="RemoveDeclaredKan_OnClick"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
                             <ItemsControl ItemsSource="{Binding ScoringOptionItems}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>

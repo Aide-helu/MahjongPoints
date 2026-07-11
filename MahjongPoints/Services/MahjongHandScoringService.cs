@@ -72,6 +72,11 @@ public sealed class MahjongHandScoringService : IHandScoringService
         _scoreCalculator = scoreCalculator;
     }
 
+    /// <summary>
+    /// 为 13 张手牌查找所有能组成可拆牌型的听牌张。
+    /// </summary>
+    /// <param name="recognizedTiles">当前识别出的 13 张手牌。</param>
+    /// <returns>可补成有效拆牌形状的候选胡牌张。</returns>
     public IReadOnlyList<RecognizedMahjongTile> FindTenpaiTiles(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
     {
         if (recognizedTiles.Count != 13)
@@ -101,6 +106,11 @@ public sealed class MahjongHandScoringService : IHandScoringService
         return results;
     }
 
+    /// <summary>
+    /// 为 14 张手牌查找所有“打出一张后可听”的候选。
+    /// </summary>
+    /// <param name="recognizedTiles">当前识别出的 14 张手牌。</param>
+    /// <returns>按弃牌分组的听牌候选。</returns>
     public IReadOnlyList<TenpaiDiscardOption> FindTenpaiDiscardOptions(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
     {
         if (recognizedTiles.Count != 14)
@@ -140,16 +150,22 @@ public sealed class MahjongHandScoringService : IHandScoringService
         var calculationTiles = recognizedTiles.Count == 13 && IsKnownTile(context.WinningTile)
             ? recognizedTiles.Concat([context.WinningTile]).ToArray()
             : recognizedTiles.ToArray();
+        if (context.DeclaredKans.Count > 0)
+        {
+            var normalizedTiles = NormalizeDeclaredKans(recognizedTiles, context.DeclaredKans);
+            calculationTiles = normalizedTiles.Count == 13 && IsKnownTile(context.WinningTile)
+                ? normalizedTiles.Concat([context.WinningTile]).ToArray()
+                : normalizedTiles.ToArray();
+        }
 
         // 胡牌张来自用户在界面选择后写入的算点上下文。
         var winningTile = context.WinningTile;
 
         // 四层算点流水线：先拆牌，再判役，再算符，最后把番符换算成点数。
-        
-        //拆牌
-        var splits = ApplySelectedOpenMelds(
+        var splits = ApplyDeclaredMelds(
             _handSplitter.Split(calculationTiles),
-            context.SelectedOpenMelds);
+            context.SelectedOpenMelds,
+            context.DeclaredKans);
         if (splits.Count == 0)
         {
             var noSplitResult = new MahjongScoringResult(
@@ -202,11 +218,95 @@ public sealed class MahjongHandScoringService : IHandScoringService
     #region 辅助函数
 
     /// <summary>
-    /// 根据用户选择的副露面子过滤候选拆法，并把匹配到的面子标记为副露。
+    /// 把声明杠转换成拆牌器能处理的三张刻子形态。
+    /// </summary>
+    /// <param name="tiles">识别出的物理牌列表。</param>
+    /// <param name="declaredKans">用户声明的杠。</param>
+    /// <returns>用于拆牌的归一化牌列表。</returns>
+    private static IReadOnlyList<RecognizedMahjongTile> NormalizeDeclaredKans(
+        IReadOnlyList<RecognizedMahjongTile> tiles,
+        IReadOnlyList<MahjongMeld> declaredKans)
+    {
+        var results = tiles.ToList();
+        foreach (var kan in declaredKans.Where(meld => meld.Type == MahjongMeldType.Quad))
+        {
+            var code = kan.Tiles[0].Code;
+            var count = results.Count(tile => string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase));
+            while (count > 3)
+            {
+                var index = results.FindLastIndex(tile => string.Equals(tile.Code, code, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    break;
+                }
+
+                results.RemoveAt(index);
+                count--;
+            }
+
+            while (count < 3)
+            {
+                results.Add(CreateTile(code));
+                count++;
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// 过滤必须包含用户声明杠的拆法，并把对应刻子替换回四张杠面子。
     /// </summary>
     /// <param name="splits">拆牌器枚举出的候选拆法。</param>
     /// <param name="selectedOpenMelds">用户确认的副露面子。</param>
-    /// <returns>保留并标记副露后的拆法。</returns>
+    /// <param name="declaredKans">用户声明的杠。</param>
+    /// <returns>保留并标记杠和副露后的拆法。</returns>
+    private static IReadOnlyList<MahjongHandSplitResult> ApplyDeclaredMelds(
+        IReadOnlyList<MahjongHandSplitResult> splits,
+        IReadOnlyList<MahjongMeld> selectedOpenMelds,
+        IReadOnlyList<MahjongMeld> declaredKans)
+    {
+        if (declaredKans.Count == 0)
+        {
+            return ApplySelectedOpenMelds(splits, selectedOpenMelds);
+        }
+
+        var results = new List<MahjongHandSplitResult>();
+        foreach (var split in splits.Where(split => split.Shape == MahjongHandShape.Standard))
+        {
+            var melds = split.Melds.ToList();
+            var containsAllDeclaredKans = true;
+            foreach (var kan in declaredKans.Where(meld => meld.Type == MahjongMeldType.Quad))
+            {
+                var kanCode = kan.Tiles[0].Code;
+                var index = melds.FindIndex(meld =>
+                    meld.Type is MahjongMeldType.Triplet or MahjongMeldType.Quad &&
+                    meld.Tiles.All(tile => string.Equals(tile.Code, kanCode, StringComparison.OrdinalIgnoreCase)));
+
+                if (index < 0)
+                {
+                    containsAllDeclaredKans = false;
+                    break;
+                }
+
+                melds[index] = kan;
+            }
+
+            if (containsAllDeclaredKans)
+            {
+                results.Add(split with { Melds = melds });
+            }
+        }
+
+        return ApplySelectedOpenMelds(results, selectedOpenMelds);
+    }
+
+    /// <summary>
+    /// 过滤必须包含用户确认副露面子的拆法，并把对应面子标记为副露。
+    /// </summary>
+    /// <param name="splits">候选拆牌结果。</param>
+    /// <param name="selectedOpenMelds">用户确认的副露面子。</param>
+    /// <returns>保留并标记副露后的拆牌结果。</returns>
     private static IReadOnlyList<MahjongHandSplitResult> ApplySelectedOpenMelds(
         IReadOnlyList<MahjongHandSplitResult> splits,
         IReadOnlyList<MahjongMeld> selectedOpenMelds)
@@ -257,9 +357,20 @@ public sealed class MahjongHandScoringService : IHandScoringService
         return results;
     }
 
+    /// <summary>
+    /// 根据牌编码创建用于候选计算的识别牌。
+    /// </summary>
+    /// <param name="code">牌编码。</param>
+    /// <returns>识别牌。</returns>
     private static RecognizedMahjongTile CreateTile(string code) =>
         new(code, GetTileDisplayName(code), 1);
 
+    /// <summary>
+    /// 从手牌中移除第一张指定编码的牌。
+    /// </summary>
+    /// <param name="tiles">原始牌列表。</param>
+    /// <param name="code">要移除的牌编码。</param>
+    /// <returns>移除一张指定牌后的牌列表。</returns>
     private static IReadOnlyList<RecognizedMahjongTile> RemoveOneTile(
         IReadOnlyList<RecognizedMahjongTile> tiles,
         string code)
@@ -280,6 +391,11 @@ public sealed class MahjongHandScoringService : IHandScoringService
         return results;
     }
 
+    /// <summary>
+    /// 判断指定识别牌是否是标准麻将牌编码。
+    /// </summary>
+    /// <param name="tile">要判断的识别牌。</param>
+    /// <returns>如果牌编码存在于标准牌表中，则返回 <c>true</c>。</returns>
     private static bool IsKnownTile(RecognizedMahjongTile tile) =>
         _allTileCodes.Contains(tile.Code, StringComparer.OrdinalIgnoreCase);
 
@@ -333,6 +449,5 @@ public sealed class MahjongHandScoringService : IHandScoringService
         };
     }
 
-    /// <summary>
     #endregion
 }

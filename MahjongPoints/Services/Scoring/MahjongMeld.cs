@@ -42,5 +42,8 @@ public sealed record MahjongMeld(
     /// </summary>
     public string DisplayText => string.Join(" ", Tiles.Select(tile => tile.Code));
 
+    /// <summary>
+    /// 用于比较面子的稳定键，包含类型和排序后的牌编码。
+    /// </summary>
     public string Key => $"{Type}:{string.Join(",", Tiles.Select(tile => tile.Code).Order(StringComparer.OrdinalIgnoreCase))}";
 }

@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MahjongPoints.Views.KanSelectionWindow"
+        Title="选择杠子"
+        Width="360"
+        Height="320"
+        MinWidth="320"
+        MinHeight="260"
+        WindowStartupLocation="CenterOwner">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16" RowSpacing="12">
+        <TextBlock x:Name="MessageText"
+                   TextWrapping="Wrap"
+                   Foreground="#555"/>
+
+        <Border Grid.Row="1"
+                BorderBrush="#D0D5DD"
+                BorderThickness="1"
+                CornerRadius="4"
+                Background="White"
+                Padding="8">
+            <ListBox x:Name="CandidateList"
+                     SelectionMode="Single"
+                     BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding DisplayName}"
+                                   Margin="0,0,0,4"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8">
+            <Button Content="取消"
+                    MinWidth="80"
+                    Click="CancelButton_OnClick"/>
+            <Button Content="确认"
+                    MinWidth="80"
+                    Click="ConfirmButton_OnClick"/>
+        </StackPanel>
+    </Grid>
+</Window>

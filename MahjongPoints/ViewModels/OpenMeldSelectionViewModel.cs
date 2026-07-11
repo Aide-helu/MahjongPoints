@@ -69,6 +69,11 @@ public sealed class OpenMeldSelectionViewModel : ObservableObject
             .ToArray();
     }
 
+    /// <summary>
+    /// 监听副露候选选中状态变化，并刷新确认按钮可用状态。
+    /// </summary>
+    /// <param name="sender">发生属性变化的副露候选。</param>
+    /// <param name="e">属性变化事件参数。</param>
     private void MeldOption_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(OpenMeldOption.IsSelected))
@@ -116,6 +121,11 @@ public sealed class OpenMeldOption : ObservableObject
         set => SetProperty(ref _isSelected, value);
     }
 
+    /// <summary>
+    /// 获取面子类型的界面显示名称。
+    /// </summary>
+    /// <param name="type">面子类型。</param>
+    /// <returns>面子类型名称。</returns>
     private static string GetMeldTypeName(MahjongMeldType type)
     {
         return type switch

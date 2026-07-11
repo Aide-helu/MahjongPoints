@@ -20,6 +20,7 @@ public partial class MainWindow : Window
 {
     private MainWindowViewModel? _subscribedViewModel;
     private bool _isShowingOpenMeldDialog;
+    private bool _isShowingKanSelectionDialog;
 
     /// <summary>
     /// 初始化主窗口组件。
@@ -38,6 +39,7 @@ public partial class MainWindow : Window
         if (_subscribedViewModel is not null)
         {
             _subscribedViewModel.OpenMeldSelectionRequested -= ViewModel_OpenMeldSelectionRequested;
+            _subscribedViewModel.KanSelectionRequested -= ViewModel_KanSelectionRequested;
             _subscribedViewModel = null;
         }
 
@@ -62,10 +64,12 @@ public partial class MainWindow : Window
             if (_subscribedViewModel is not null)
             {
                 _subscribedViewModel.OpenMeldSelectionRequested -= ViewModel_OpenMeldSelectionRequested;
+                _subscribedViewModel.KanSelectionRequested -= ViewModel_KanSelectionRequested;
             }
 
             _subscribedViewModel = viewModel;
             viewModel.OpenMeldSelectionRequested += ViewModel_OpenMeldSelectionRequested;
+            viewModel.KanSelectionRequested += ViewModel_KanSelectionRequested;
         }
     }
 
@@ -98,6 +102,11 @@ public partial class MainWindow : Window
         await viewModel.LoadAndRecognizeAsync(files[0].Path.LocalPath);
     }
 
+    /// <summary>
+    /// 处理读取剪贴板图片按钮点击，把剪贴板图片保存为临时文件后交给 ViewModel 识别。
+    /// </summary>
+    /// <param name="sender">触发点击事件的控件。</param>
+    /// <param name="e">路由事件参数。</param>
     private async void LoadClipboardImageButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
@@ -134,6 +143,11 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// 处理弃牌胡牌候选的点击事件，并触发重新算点。
+    /// </summary>
+    /// <param name="sender">被点击的候选控件。</param>
+    /// <param name="e">指针事件参数。</param>
     private async void TenpaiDiscardWinningOption_OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control { DataContext: TenpaiDiscardWinningOption option } ||
@@ -146,6 +160,27 @@ public partial class MainWindow : Window
         await viewModel.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(option);
     }
 
+    /// <summary>
+    /// 删除界面列表中用户声明的杠。
+    /// </summary>
+    /// <param name="sender">触发点击事件的控件。</param>
+    /// <param name="e">路由事件参数。</param>
+    private async void RemoveDeclaredKan_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { DataContext: DeclaredKanItem item } ||
+            DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        await viewModel.RemoveDeclaredKanCommand.ExecuteAsync(item);
+    }
+
+    /// <summary>
+    /// 响应 ViewModel 的副露选择请求并显示副露选择窗口。
+    /// </summary>
+    /// <param name="sender">发出请求的 ViewModel。</param>
+    /// <param name="e">事件参数。</param>
     private async void ViewModel_OpenMeldSelectionRequested(object? sender, EventArgs e)
     {
         if (_isShowingOpenMeldDialog || sender is not MainWindowViewModel viewModel)
@@ -180,6 +215,31 @@ public partial class MainWindow : Window
         finally
         {
             _isShowingOpenMeldDialog = false;
+        }
+    }
+
+    /// <summary>
+    /// 响应 ViewModel 的杠候选选择请求并显示杠选择窗口。
+    /// </summary>
+    /// <param name="sender">发出请求的 ViewModel。</param>
+    /// <param name="e">杠候选选择请求参数。</param>
+    private async void ViewModel_KanSelectionRequested(object? sender, KanSelectionRequestedEventArgs e)
+    {
+        if (_isShowingKanSelectionDialog || sender is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        _isShowingKanSelectionDialog = true;
+        try
+        {
+            var dialog = new KanSelectionWindow(e.Kind, e.Candidates);
+            var selectedTile = await dialog.ShowDialog<RecognizedMahjongTile?>(this);
+            await viewModel.ApplyKanSelectionAsync(e.Kind, selectedTile);
+        }
+        finally
+        {
+            _isShowingKanSelectionDialog = false;
         }
     }
 }

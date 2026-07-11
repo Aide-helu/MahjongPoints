@@ -83,7 +83,7 @@ public sealed class DefaultFuCalculator : IFuCalculator
             breakdown.Add("自摸 +2。");
         }
 
-        if (IsMenzenRon(split, context))
+        if (IsMenzenRon(context))
         {
             rawFu += 10;
             breakdown.Add("门前清荣和 +10。");
@@ -122,7 +122,7 @@ public sealed class DefaultFuCalculator : IFuCalculator
     private static bool IsOpenPinFuShape(MahjongHandSplitResult split, MahjongScoringContext context)
     {
         if (split.Shape != MahjongHandShape.Standard ||
-            !IsOpenHand(split, context) ||
+            !context.IsOpenHand ||
             split.Melds.Any(meld => meld.Type != MahjongMeldType.Sequence) ||
             IsValuePair(split.Pair, context))
         {
@@ -376,20 +376,10 @@ public sealed class DefaultFuCalculator : IFuCalculator
     /// <summary>
     /// 判断是否为门前清荣和。
     /// </summary>
-    /// <param name="split">手牌拆解结果。</param>
     /// <param name="context">算点上下文。</param>
     /// <returns>如果满足门前清荣和加符条件，则返回 <c>true</c>。</returns>
-    private static bool IsMenzenRon(MahjongHandSplitResult split, MahjongScoringContext context) =>
-        !context.IsTsumo && !IsOpenHand(split, context);
-
-    /// <summary>
-    /// 判断当前手牌是否存在副露。
-    /// </summary>
-    /// <param name="split">手牌拆解结果。</param>
-    /// <param name="context">算点上下文。</param>
-    /// <returns>如果上下文或任一面子标记为副露，则返回 <c>true</c>。</returns>
-    private static bool IsOpenHand(MahjongHandSplitResult split, MahjongScoringContext context) =>
-        context.IsOpenHand || split.Melds.Any(meld => meld.IsOpen);
+    private static bool IsMenzenRon(MahjongScoringContext context) =>
+        !context.IsTsumo && !context.IsOpenHand;
 
     /// <summary>
     /// 判断是否为三元牌。

@@ -178,6 +178,9 @@ public sealed class MahjongScoringContext : ObservableObject
     public string RoundWindTileCode => RoundWind.ToTileCode();
 
 
+    /// <summary>
+    /// 是否海底捞月。
+    /// </summary>
     [MahjongScoringOption("是否海底捞月", 90)]
     public bool IsHaiDi
     {
@@ -185,6 +188,9 @@ public sealed class MahjongScoringContext : ObservableObject
         set => SetProperty(ref _isHaiDi, value);
     }
 
+    /// <summary>
+    /// 是否河底捞鱼。
+    /// </summary>
     [MahjongScoringOption("是否河底捞鱼", 100)]
     public bool IsHeDi
     {
@@ -192,6 +198,9 @@ public sealed class MahjongScoringContext : ObservableObject
         set => SetProperty(ref _isHeDi, value);
     }
 
+    /// <summary>
+    /// 是否抢杠。
+    /// </summary>
     [MahjongScoringOption("是否抢杠", 110)]
     public bool IsRobKong
     {
@@ -199,6 +208,9 @@ public sealed class MahjongScoringContext : ObservableObject
         set => SetProperty(ref _isRobKong, value);
     }
 
+    /// <summary>
+    /// 是否岭上开花。
+    /// </summary>
     [MahjongScoringOption("是否岭上开花", 120)]
     public bool IsRidgeBlossom
     {
@@ -251,6 +263,11 @@ public sealed class MahjongScoringContext : ObservableObject
     /// 用户确认过的副露面子列表；为空时由算点服务自行使用全部拆牌结果。
     /// </summary>
     private IReadOnlyList<MahjongMeld> _selectedOpenMelds = [];
+
+    /// <summary>
+    /// 用户手动声明的杠面子列表。
+    /// </summary>
+    private IReadOnlyList<MahjongMeld> _declaredKans = [];
     
     /// <summary>
     /// 用户选择的胡牌张。
@@ -270,6 +287,9 @@ public sealed class MahjongScoringContext : ObservableObject
         set => SetProperty(ref _riichiSticks, value);
     }
 
+    /// <summary>
+    /// 宝牌数量。
+    /// </summary>
     public int DoraCount
     {
         get => _doraCount;
@@ -283,6 +303,15 @@ public sealed class MahjongScoringContext : ObservableObject
     {
         get => _selectedOpenMelds;
         set => SetProperty(ref _selectedOpenMelds, value ?? []);
+    }
+
+    /// <summary>
+    /// 用户手动声明的杠面子列表。
+    /// </summary>
+    public IReadOnlyList<MahjongMeld> DeclaredKans
+    {
+        get => _declaredKans;
+        set => SetProperty(ref _declaredKans, value ?? []);
     }
     
     /// <summary>

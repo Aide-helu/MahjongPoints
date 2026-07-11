@@ -72,10 +72,10 @@ public sealed class DefaultHandSplitter : IHandSplitter
     /// <summary>
     /// 尝试创建七对子分割
     /// </summary>
-    /// <param name="counts"></param>
-    /// <param name="tileByCode"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="counts">按牌编码统计的张数。</param>
+    /// <param name="tileByCode">每种牌编码对应的识别牌。</param>
+    /// <param name="splitResult">成功时返回七对子拆牌结果。</param>
+    /// <returns>如果手牌满足七对子形状，则返回 <c>true</c>。</returns>
     private static bool SevenPairsSplit(
         IReadOnlyDictionary<string, int> counts,
         IReadOnlyDictionary<string, RecognizedMahjongTile> tileByCode,

@@ -239,19 +239,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
             //判断混全带幺九；纯全带幺九或混老头成立时不重复计算混全带幺九
             if (!isChunQuanDaiYaoJiu && !isHunLaoTou && IsHunQuanDaiYaoJiu(tiles, split))
             {
-                yakus.Add(ApplyOpenHandFan(_hunquandaiyaojiu, split, context, 1));
+                yakus.Add(ApplyOpenHandFan(_hunquandaiyaojiu, context, 1));
             }
 
             //判断一气通贯
             if (IsYiQiTongGuan(split))
             {
-                yakus.Add(ApplyOpenHandFan(_yiqitongguan, split, context, 1));
+                yakus.Add(ApplyOpenHandFan(_yiqitongguan, context, 1));
             }
 
             //判断三色同顺
             if (IsSanSeTongShun(split))
             {
-                yakus.Add(ApplyOpenHandFan(_sansetongshun, split, context, 1));
+                yakus.Add(ApplyOpenHandFan(_sansetongshun, context, 1));
             }
 
             //判断对对和
@@ -287,19 +287,19 @@ public sealed class DefaultYakuDetector : IYakuDetector
             //判断清一色
             if (isQingYiSe)
             {
-                yakus.Add(ApplyOpenHandFan(_qingyise, split, context, 5));
+                yakus.Add(ApplyOpenHandFan(_qingyise, context, 5));
             }
 
             //判断纯全带幺九
             if (isChunQuanDaiYaoJiu)
             {
-                yakus.Add(ApplyOpenHandFan(_chunquandaiyaojiu, split, context, 2));
+                yakus.Add(ApplyOpenHandFan(_chunquandaiyaojiu, context, 2));
             }
 
             //判断混一色；清一色成立时不重复计算混一色
             if (!isQingYiSe && isHunYiSe)
             {
-                yakus.Add(ApplyOpenHandFan(_hunyise, split, context, 2));
+                yakus.Add(ApplyOpenHandFan(_hunyise, context, 2));
             }
             
             
@@ -314,13 +314,11 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 对副露减番役应用副露后的番数。
     /// </summary>
     /// <param name="yaku">门前时的役种定义。</param>
-    /// <param name="splitResult">当前拆牌结果。</param>
     /// <param name="context">算点上下文。</param>
     /// <param name="openFan">副露后的番数。</param>
     /// <returns>按当前副露状态修正后的役种。</returns>
     private static MahjongYaku ApplyOpenHandFan(
         MahjongYaku yaku,
-        MahjongHandSplitResult splitResult,
         MahjongScoringContext context,
         int openFan)
     {
@@ -334,8 +332,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 上下文通用役种
     /// </summary>
-    /// <param name="yakus"></param>
-    /// <param name="context"></param>
+    /// <param name="yakus">用于累加检测结果的役种列表。</param>
+    /// <param name="context">当前算点上下文。</param>
     private static void Global(List<MahjongYaku> yakus, MahjongScoringContext context)
     {
         if (context.IsMenzen)
@@ -390,8 +388,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 检测是哪种三元牌
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>当前拆牌中成立的三元牌役种。</returns>
     private static IEnumerable<MahjongYaku> DetectSanYuanPai(MahjongHandSplitResult splitResult)
     {
         foreach (var meld in splitResult.Melds)
@@ -442,9 +440,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是一杯口
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果满足一杯口，则返回 <c>true</c>。</returns>
     private static bool IsYiBeiKou(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //一杯口只适用于门前清的标准型手牌
@@ -457,6 +455,11 @@ public sealed class DefaultYakuDetector : IYakuDetector
         return CountSequences(splitResult).Count(pair => pair.Value == 2) == 1;
     }
 
+    /// <summary>
+    /// 统计当前拆牌中每种顺子的出现次数。
+    /// </summary>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>顺子显示文本到出现次数的映射。</returns>
     private static IReadOnlyDictionary<string, int> CountSequences(MahjongHandSplitResult splitResult) =>
         splitResult.Melds
             .Where(meld => meld.Type == MahjongMeldType.Sequence)
@@ -466,9 +469,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是平和
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果满足平和，则返回 <c>true</c>。</returns>
     private static bool IsPingHu(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //平和门前限定，并且只适用于标准型
@@ -535,7 +538,6 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// 判断是否是断幺
     /// </summary>
     /// <param name="tiles">待检查的牌列表。</param>
-    /// <param name="split">分割序列。</param>
     /// <returns>如果满足断幺九条件，则返回 <c>true</c>。</returns>
     private static bool IsDuanYao(IEnumerable<RecognizedMahjongTile> tiles)
     {
@@ -554,8 +556,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三色同刻
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足三色同刻，则返回 <c>true</c>。</returns>
     private static bool IsSanSeTongKe(MahjongHandSplitResult splitResult)
     {
         //三色同刻只适用于标准型；七对子等特殊形不能成立
@@ -600,9 +602,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是混全带幺九
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足混全带幺九，则返回 <c>true</c>。</returns>
     private static bool IsHunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         
@@ -654,8 +656,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是一气通贯
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足一气通贯，则返回 <c>true</c>。</returns>
     private static bool IsYiQiTongGuan(MahjongHandSplitResult splitResult)
     {
         //不是普通型直接false
@@ -686,8 +688,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三色同顺
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足三色同顺，则返回 <c>true</c>。</returns>
     private static bool IsSanSeTongShun(MahjongHandSplitResult splitResult)
     {
         //不是标准型直接false
@@ -715,6 +717,11 @@ public sealed class DefaultYakuDetector : IYakuDetector
             suits.Contains('s'));
     }
 
+    /// <summary>
+    /// 提取当前拆牌中所有顺子的起始数字和花色。
+    /// </summary>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>顺子的起始数字和花色序列。</returns>
     private static IEnumerable<(int Start, char Suit)> GetSequenceStarts(MahjongHandSplitResult splitResult)
     {
         foreach (var meld in splitResult.Melds)
@@ -737,8 +744,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是对对和
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足对对和，则返回 <c>true</c>。</returns>
     private static bool IsDuiDuiHe(MahjongHandSplitResult splitResult)
     {
 
@@ -753,9 +760,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三暗刻
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果满足三暗刻，则返回 <c>true</c>。</returns>
     private static bool IsSanAnKe(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //不是标准型直接false
@@ -806,8 +813,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是三杠子
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足三杠子，则返回 <c>true</c>。</returns>
     private static bool IsSanGangZi(MahjongHandSplitResult splitResult)
     {
         if (splitResult.Shape != MahjongHandShape.Standard)
@@ -821,8 +828,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是小三元
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足小三元，则返回 <c>true</c>。</returns>
     private static bool IsXiaoSanYuan(MahjongHandSplitResult splitResult)
     {
         //小三元只适用于标准型：两组三元牌刻子/杠子 + 剩下一种三元牌作雀头
@@ -860,9 +867,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是混老头
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足混老头，则返回 <c>true</c>。</returns>
     private static bool IsHunLaoTou(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         //混老头可以是标准型或七对子；其他特殊形不处理
@@ -899,9 +906,10 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是七对子
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果满足七对子，则返回 <c>true</c>。</returns>
     private static bool IsQiDuiZi(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //七对子是门前限定；副露时不成立
@@ -927,8 +935,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是清一色
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <returns>如果满足清一色，则返回 <c>true</c>。</returns>
     private static bool IsQingYiSe(IEnumerable<RecognizedMahjongTile> tiles)
     {
         var suit = '\0';
@@ -959,9 +967,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是二杯口
     /// </summary>
-    /// <param name="splitResult"></param>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <param name="context">当前算点上下文。</param>
+    /// <returns>如果满足二杯口，则返回 <c>true</c>。</returns>
     private static bool IsErBeiKou(MahjongHandSplitResult splitResult, MahjongScoringContext context)
     {
         //二杯口门前限定，并且只适用于标准型
@@ -977,9 +985,9 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是纯全带幺九
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <param name="splitResult"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <param name="splitResult">当前拆牌结果。</param>
+    /// <returns>如果满足纯全带幺九，则返回 <c>true</c>。</returns>
     private static bool IsChunQuanDaiYaoJiu(IEnumerable<RecognizedMahjongTile> tiles, MahjongHandSplitResult splitResult)
     {
         //纯全带幺九只适用于标准型，且不能含字牌
@@ -1021,8 +1029,8 @@ public sealed class DefaultYakuDetector : IYakuDetector
     /// <summary>
     /// 判断是否是混一色
     /// </summary>
-    /// <param name="tiles"></param>
-    /// <returns></returns>
+    /// <param name="tiles">参与判役的完整手牌。</param>
+    /// <returns>如果满足混一色，则返回 <c>true</c>。</returns>
     private static bool IsHunYiSe(IEnumerable<RecognizedMahjongTile> tiles)
     {
         var suit = '\0';

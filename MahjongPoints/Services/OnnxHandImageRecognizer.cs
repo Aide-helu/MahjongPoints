@@ -12,6 +12,9 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace MahjongPoints.Services;
 
+/// <summary>
+/// 使用 ONNX Runtime 模型识别麻将手牌图片。
+/// </summary>
 public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
 {
     private const int InputSize = 640;
@@ -50,6 +53,10 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
     private readonly string _modelPath;
     private readonly Lazy<InferenceSession> _session;
 
+    /// <summary>
+    /// 创建 ONNX 手牌图片识别器。
+    /// </summary>
+    /// <param name="modelPath">可选模型路径；为空时按环境变量和默认路径查找。</param>
     public OnnxHandImageRecognizer(string? modelPath = null)
     {
         _modelPath = FirstExisting(
@@ -60,6 +67,12 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         _session = new Lazy<InferenceSession>(() => new InferenceSession(_modelPath));
     }
 
+    /// <summary>
+    /// 识别指定图片中的麻将牌。
+    /// </summary>
+    /// <param name="imagePath">要识别的图片路径。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>手牌识别结果。</returns>
     public Task<MahjongHandRecognitionResult> RecognizeAsync(
         string imagePath,
         CancellationToken cancellationToken = default)
@@ -93,6 +106,9 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
             $"识别完成：{tiles.Length} 张。"));
     }
 
+    /// <summary>
+    /// 释放已经创建的 ONNX 推理会话。
+    /// </summary>
     public void Dispose()
     {
         if (_session.IsValueCreated)
@@ -101,6 +117,11 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         }
     }
 
+    /// <summary>
+    /// 把图片缩放、灰度增强并转换为模型输入张量。
+    /// </summary>
+    /// <param name="imagePath">图片文件路径。</param>
+    /// <returns>模型输入张量。</returns>
     private static DenseTensor<float> CreateInputTensor(string imagePath)
     {
         using var source = new Bitmap(imagePath);
@@ -134,6 +155,11 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         return tensor;
     }
 
+    /// <summary>
+    /// 创建自动对比度拉伸后的灰度图片。
+    /// </summary>
+    /// <param name="source">原始位图。</param>
+    /// <returns>灰度增强后的位图。</returns>
     private static Bitmap CreateAutocontrastGrayImage(Bitmap source)
     {
         var gray = new byte[source.Width * source.Height];
@@ -165,6 +191,11 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         return bitmap;
     }
 
+    /// <summary>
+    /// 把模型输出转换为经过置信度过滤和非极大值抑制的检测框。
+    /// </summary>
+    /// <param name="output">模型输出张量。</param>
+    /// <returns>检测框列表。</returns>
     private static IReadOnlyList<Detection> Postprocess(Tensor<float> output)
     {
         var detections = new List<Detection>();
@@ -203,6 +234,11 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         return NonMaxSuppress(detections);
     }
 
+    /// <summary>
+    /// 对检测框执行非极大值抑制，去掉重叠度过高的低置信度框。
+    /// </summary>
+    /// <param name="detections">候选检测框列表。</param>
+    /// <returns>保留的检测框列表。</returns>
     private static IReadOnlyList<Detection> NonMaxSuppress(List<Detection> detections)
     {
         var kept = new List<Detection>();
@@ -217,6 +253,12 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         return kept;
     }
 
+    /// <summary>
+    /// 计算两个检测框的交并比。
+    /// </summary>
+    /// <param name="a">第一个检测框。</param>
+    /// <param name="b">第二个检测框。</param>
+    /// <returns>两个检测框的交并比。</returns>
     private static float CalculateIou(Detection a, Detection b)
     {
         var x1 = Math.Max(a.X1, b.X1);
@@ -228,6 +270,11 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         return union <= 0 ? 0 : intersection / union;
     }
 
+    /// <summary>
+    /// 从候选路径中返回第一个存在的文件路径。
+    /// </summary>
+    /// <param name="values">候选模型路径。</param>
+    /// <returns>第一个存在的模型路径。</returns>
     private static string FirstExisting(params string?[] values)
     {
         foreach (var value in values)
@@ -249,6 +296,9 @@ public sealed class OnnxHandImageRecognizer : IHandImageRecognizer, IDisposable
         int ClassId,
         float Confidence)
     {
+        /// <summary>
+        /// 检测框面积。
+        /// </summary>
         public float Area => Math.Max(0, X2 - X1) * Math.Max(0, Y2 - Y1);
     }
 }

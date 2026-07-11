@@ -8,6 +8,9 @@ using MahjongPoints.Services.Scoring;
 
 namespace MahjongPoints.Models;
 
+/// <summary>
+/// 表示一个绑定到算点上下文布尔属性的界面选项。
+/// </summary>
 public sealed class MahjongScoringOptionItem : ObservableObject
 {
     private readonly MahjongScoringContext _context;
@@ -29,8 +32,14 @@ public sealed class MahjongScoringOptionItem : ObservableObject
         _context.PropertyChanged += Context_OnPropertyChanged;
     }
 
+    /// <summary>
+    /// 绑定的算点上下文属性名。
+    /// </summary>
     public string Key { get; }
 
+    /// <summary>
+    /// 界面显示名称。
+    /// </summary>
     public string DisplayName { get; }
 
     /// <summary>
@@ -38,6 +47,9 @@ public sealed class MahjongScoringOptionItem : ObservableObject
     /// </summary>
     public bool IsEnabled => CanEnableOption(Key, _context);
 
+    /// <summary>
+    /// 当前选项是否已勾选。
+    /// </summary>
     public bool IsChecked
     {
         get => (bool)(_property.GetValue(_context) ?? false);
@@ -95,6 +107,11 @@ public sealed class MahjongScoringOptionItem : ObservableObject
             .ToArray(); // 返回数组，但以 IReadOnlyList<T> 接口形式暴露
     }
 
+    /// <summary>
+    /// 监听算点上下文属性变化，并同步当前选项的可用状态和勾选状态。
+    /// </summary>
+    /// <param name="sender">发生属性变化的算点上下文。</param>
+    /// <param name="e">属性变化事件参数。</param>
     private void Context_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         RefreshAvailability();

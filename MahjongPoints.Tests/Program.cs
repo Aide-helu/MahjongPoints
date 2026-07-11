@@ -1,3 +1,8 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -9,11 +14,42 @@ using MahjongPoints.Services;
 using MahjongPoints.Services.Scoring;
 using MahjongPoints.ViewModels;
 
+// <summary>
+// 创建测试用识别牌，显示名固定等于牌编码。
+// </summary>
+// <param name="code">要创建的牌编码。</param>
+// <returns>测试用识别牌。</returns>
 static RecognizedMahjongTile T(string code) => new(code, code, 1);
+
+// <summary>
+// 将一组牌编码转换为识别牌数组。
+// </summary>
+// <param name="codes">要转换的牌编码列表。</param>
+// <returns>识别牌数组。</returns>
 static RecognizedMahjongTile[] Tiles(params string[] codes) => codes.Select(T).ToArray();
+
+// <summary>
+// 从 ViewModel 中展开所有打牌后可胡的候选项。
+// </summary>
+// <param name="vm">包含打牌候选项的 ViewModel。</param>
+// <returns>所有可点击的打牌胡牌候选项。</returns>
 static TenpaiDiscardWinningOption[] DiscardWinningOptions(MainWindowViewModel vm) =>
     vm.TenpaiDiscardOptions.SelectMany(option => option.WinningOptions).ToArray();
 
+// <summary>
+// 创建测试用杠面子。
+// </summary>
+// <param name="code">杠子的牌编码。</param>
+// <param name="isOpen">是否为明杠。</param>
+// <returns>杠面子。</returns>
+static MahjongMeld Kan(string code, bool isOpen) =>
+    new(MahjongMeldType.Quad, [T(code), T(code), T(code), T(code)], isOpen);
+
+// <summary>
+// 当测试条件不成立时抛出异常。
+// </summary>
+// <param name="condition">期望为真的条件。</param>
+// <param name="message">失败时显示的消息。</param>
 static void Assert(bool condition, string message)
 {
     if (!condition)
@@ -24,6 +60,9 @@ static void Assert(bool condition, string message)
 
 var avaloniaInitialized = false;
 
+// <summary>
+// 为界面绑定测试初始化一次 Avalonia。
+// </summary>
 void EnsureAvaloniaInitialized()
 {
     if (avaloniaInitialized)
@@ -37,6 +76,10 @@ void EnsureAvaloniaInitialized()
     avaloniaInitialized = true;
 }
 
+// <summary>
+// 验证只有牌型、没有役的听牌候选不会被算作有效和牌。
+// </summary>
+// <returns>异步测试任务。</returns>
 static async Task TenpaiTilesIncludeNoYakuShape()
 {
     var service = new MahjongHandScoringService();
@@ -52,6 +95,9 @@ static async Task TenpaiTilesIncludeNoYakuShape()
     Assert(result.ScoreSummary.Contains("No yaku", StringComparison.OrdinalIgnoreCase), "No-yaku scoring should say No yaku.");
 }
 
+// <summary>
+// 验证宝牌只增加番数，不增加符数。
+// </summary>
 static void DoraAddsFanButNotFu()
 {
     var calculator = new DefaultScoreCalculator();
@@ -66,6 +112,9 @@ static void DoraAddsFanButNotFu()
     Assert(withDora.Items.Any(item => item.Name.Contains("Dora", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("宝牌", StringComparison.Ordinal)), "Dora should be shown as a score item.");
 }
 
+// <summary>
+// 验证只有宝牌不会形成有效役。
+// </summary>
 static void DoraDoesNotCreateYaku()
 {
     var calculator = new DefaultScoreCalculator();
@@ -78,6 +127,10 @@ static void DoraDoesNotCreateYaku()
     Assert(result.TotalPoints == 0, "Dora-only hand must not have points.");
 }
 
+// <summary>
+// 验证算点服务会选择得点最高的拆牌结果。
+// </summary>
+// <returns>异步测试任务。</returns>
 static async Task HighestScoringShapeWins()
 {
     var lowSplit = new MahjongHandSplitResult([], T("1m"));
@@ -96,6 +149,9 @@ static async Task HighestScoringShapeWins()
     Assert(result.WinningShape == highSplit.DisplayText, "Expected selected shape to match the highest-scoring split.");
 }
 
+// <summary>
+// 验证 14 张牌的弃牌候选复用 13 张听牌搜索。
+// </summary>
 static void FourteenTilesFindDiscardOptionsByReusingTenpaiSearch()
 {
     var service = new MahjongHandScoringService();
@@ -114,6 +170,62 @@ static void FourteenTilesFindDiscardOptionsByReusingTenpaiSearch()
     Assert(!discard1z.RemainingTiles.Any(tile => tile.Code == "1z"), "Discard option remaining tiles should remove one discarded tile.");
 }
 
+// <summary>
+// 验证明杠会把 15 张物理牌归一化后再算点。
+// </summary>
+// <returns>异步测试任务。</returns>
+static async Task OpenKanNormalizesFifteenPhysicalTiles()
+{
+    var service = new MahjongHandScoringService();
+    var context = new MahjongScoringContext
+    {
+        WinningTile = T("1z"),
+        DeclaredKans = [Kan("2m", isOpen: true)],
+        IsOpenHand = true
+    };
+
+    var result = await service.CalculateAsync(Tiles(
+        "2m", "2m", "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z"), context);
+
+    Assert(result.IsWinningHand, "Declared open kan should normalize 15 physical tiles into a winning hand.");
+    Assert(result.WinningShape.Contains("2m 2m 2m 2m", StringComparison.Ordinal), "Declared open kan should be kept as a quad in the winning shape.");
+    Assert(context.IsMenzen == false, "Declared open kan should break menzen.");
+}
+
+// <summary>
+// 验证暗杠会把两张可见同牌补成杠面子。
+// </summary>
+// <returns>异步测试任务。</returns>
+static async Task ConcealedKanPadsTwoVisibleTiles()
+{
+    var service = new MahjongHandScoringService();
+    var context = new MahjongScoringContext
+    {
+        WinningTile = T("1z"),
+        DeclaredKans = [Kan("2m", isOpen: false)],
+        IsTsumo = true
+    };
+
+    var result = await service.CalculateAsync(Tiles(
+        "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z"), context);
+
+    Assert(result.IsWinningHand, "Declared concealed kan should pad two visible tiles into an effective quad meld.");
+    Assert(result.WinningShape.Contains("2m 2m 2m 2m", StringComparison.Ordinal), "Declared concealed kan should be kept as a quad in the winning shape.");
+    Assert(context.IsMenzen, "Declared concealed kan should not break menzen.");
+}
+
+// <summary>
+// 验证 ViewModel 会为 14 张未和牌显示弃牌听牌候选。
+// </summary>
+// <returns>异步测试任务。</returns>
 async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
 {
     EnsureAvaloniaInitialized();
@@ -142,6 +254,10 @@ async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
     Assert(vm.TenpaiDiscardOptions[0].DisplayText.Contains("9m", StringComparison.Ordinal), "Discard option should list the wait tiles.");
 }
 
+// <summary>
+// 验证弃牌听牌模式会等待用户选择胡牌张。
+// </summary>
+// <returns>异步测试任务。</returns>
 async Task ViewModelWaitsForDiscardWinningSelection()
 {
     EnsureAvaloniaInitialized();
@@ -165,6 +281,10 @@ async Task ViewModelWaitsForDiscardWinningSelection()
     Assert(!vm.WinningShape.Contains("NULL", StringComparison.Ordinal), "Discard-tenpai mode should not show the initial failed split result.");
 }
 
+// <summary>
+// 验证选择弃牌胡牌候选后会用所选胡牌张重新算点。
+// </summary>
+// <returns>异步测试任务。</returns>
 async Task ViewModelCalculatesSelectedDiscardWinningTile()
 {
     EnsureAvaloniaInitialized();
@@ -198,6 +318,10 @@ async Task ViewModelCalculatesSelectedDiscardWinningTile()
     Assert(vm.ScoreSummary == "Selected score", "Selecting a discard wait should update the score summary.");
 }
 
+// <summary>
+// 验证第一次选择弃牌胡牌候选时使用完整 14 张牌算点。
+// </summary>
+// <returns>异步测试任务。</returns>
 async Task ViewModelFirstDiscardWinningSelectionUsesCompleteHand()
 {
     EnsureAvaloniaInitialized();
@@ -219,6 +343,10 @@ async Task ViewModelFirstDiscardWinningSelectionUsesCompleteHand()
     Assert(!vm.WinningShape.Contains("No valid 4 melds", StringComparison.OrdinalIgnoreCase), "The first discard-winning selection should not calculate the 13-tile remaining hand by itself.");
 }
 
+// <summary>
+// 验证所有弃牌胡牌候选中只会保留一个选中项。
+// </summary>
+// <returns>异步测试任务。</returns>
 async Task ViewModelKeepsOneSelectedDiscardWinningTile()
 {
     EnsureAvaloniaInitialized();
@@ -245,6 +373,161 @@ async Task ViewModelKeepsOneSelectedDiscardWinningTile()
     Assert(ReferenceEquals(vm.SelectedTenpaiDiscardWinningOption, options[1]), "The latest clicked discard-winning tile should be the selected option.");
 }
 
+// <summary>
+// 验证只有一个明杠候选时会直接添加，不弹选择窗。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelAutoAddsSingleOpenKanCandidate()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m", "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddOpenKanCommand.ExecuteAsync(null);
+
+    Assert(vm.DeclaredKans.Count == 1, "A single open-kan candidate should be added automatically.");
+    Assert(vm.ScoringContext.DeclaredKans.Single().Tiles[0].Code == "2m", "The declared open kan should use the only four-of-a-kind tile.");
+    Assert(vm.ScoringContext.IsOpenHand, "Declared open kan should mark the hand as open.");
+    Assert(!vm.ScoringContext.IsMenzen, "Declared open kan should break menzen.");
+}
+
+// <summary>
+// 验证声明明杠时会请求普通副露选择。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelOpenKanRequestsOpenMeldSelection()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m", "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+    var openMeldRequests = 0;
+    vm.OpenMeldSelectionRequested += (_, _) => openMeldRequests++;
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddOpenKanCommand.ExecuteAsync(null);
+
+    Assert(openMeldRequests == 1, "Declaring an open kan should request normal open-meld selection.");
+}
+
+// <summary>
+// 验证从多个候选中选择明杠后会请求普通副露选择。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelSelectedOpenKanRequestsOpenMeldSelection()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m", "2m", "2m",
+        "3p", "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+    KanSelectionRequestedEventArgs? requested = null;
+    var openMeldRequests = 0;
+    vm.KanSelectionRequested += (_, args) => requested = args;
+    vm.OpenMeldSelectionRequested += (_, _) => openMeldRequests++;
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddOpenKanCommand.ExecuteAsync(null);
+    await vm.ApplyKanSelectionAsync(DeclaredKanKind.Open, requested!.Candidates[0]);
+
+    Assert(requested is not null, "Multiple open-kan candidates should request kan selection.");
+    Assert(vm.ScoringContext.IsOpenHand, "Selected open kan should mark the hand as open.");
+    Assert(openMeldRequests == 1, "Selecting an open kan should request normal open-meld selection.");
+}
+
+// <summary>
+// 验证只有一个暗杠候选时会直接添加，不弹选择窗。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelAutoAddsSingleConcealedKanCandidate()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "6m", "7m", "8m");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddConcealedKanCommand.ExecuteAsync(null);
+
+    Assert(vm.DeclaredKans.Count == 1, "A single concealed-kan candidate should be added automatically.");
+    Assert(vm.ScoringContext.DeclaredKans.Single().Tiles[0].Code == "2m", "The declared concealed kan should use the only pair tile.");
+    Assert(!vm.ScoringContext.IsOpenHand, "Declared concealed kan should not mark the hand as open.");
+    Assert(vm.ScoringContext.IsMenzen, "Declared concealed kan should keep menzen.");
+}
+
+// <summary>
+// 验证多个杠候选会请求用户选择。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelRequestsKanSelectionForMultipleCandidates()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m",
+        "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+    KanSelectionRequestedEventArgs? requested = null;
+    vm.KanSelectionRequested += (_, args) => requested = args;
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddConcealedKanCommand.ExecuteAsync(null);
+
+    Assert(requested is not null, "Multiple concealed-kan candidates should request user selection.");
+    Assert(requested!.Candidates.Count == 3, "All pair tiles should be offered as concealed-kan candidates.");
+    Assert(vm.DeclaredKans.Count == 0, "Multiple candidates should not auto-add a kan before selection.");
+}
+
+// <summary>
+// 验证同一种牌不能重复声明明杠。
+// </summary>
+// <returns>异步测试任务。</returns>
+async Task ViewModelDoesNotDeclareSameOpenKanTileTwice()
+{
+    EnsureAvaloniaInitialized();
+
+    var tiles = Tiles(
+        "2m", "2m", "2m", "2m",
+        "3p", "3p", "3p",
+        "4s", "4s", "4s",
+        "5z", "5z", "5z",
+        "1z", "1z");
+    var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
+
+    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.AddOpenKanCommand.ExecuteAsync(null);
+    await vm.AddOpenKanCommand.ExecuteAsync(null);
+
+    Assert(vm.DeclaredKans.Count == 1, "The same tile code should not be declared as more than one kan.");
+}
+
+// <summary>
+// 验证弃牌胡牌候选的选中状态会刷新边框。
+// </summary>
 static void DiscardWinningOptionSelectionChangesBorder()
 {
     var option = new TenpaiDiscardWinningOption(T("1z"), T("9m"), []);
@@ -257,6 +540,9 @@ static void DiscardWinningOptionSelectionChangesBorder()
     Assert(ReferenceEquals(option.SelectionBorderBrush, Brushes.DodgerBlue), "Selected discard-winning tile should use the blue selection brush.");
 }
 
+// <summary>
+// 验证宝牌数量命令会把下限限制在零。
+// </summary>
 static void DoraCommandsClampAtZero()
 {
     var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
@@ -266,6 +552,9 @@ static void DoraCommandsClampAtZero()
     Assert(vm.ScoringContext.DoraCount == 1, "Increment command should add one dora.");
 }
 
+// <summary>
+// 验证算点选项显示名会省略“是否”前缀。
+// </summary>
 static void ScoringOptionLabelsOmitQuestionPrefix()
 {
     var labels = MahjongScoringOptionItem.CreateItems(new MahjongScoringContext())
@@ -276,6 +565,9 @@ static void ScoringOptionLabelsOmitQuestionPrefix()
     Assert(!labels.Any(label => label.StartsWith("是否", StringComparison.Ordinal)), "Option labels should not start with 是否.");
 }
 
+// <summary>
+// 验证立直快捷命令会设置精确的算点选项组合。
+// </summary>
 static void RiichiShortcutCommandsSetExactCombination()
 {
     var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
@@ -300,6 +592,9 @@ static void RiichiShortcutCommandsSetExactCombination()
     Assert(vm.ScoringContext.IsTsumo, "立自 should select tsumo.");
 }
 
+// <summary>
+// 验证副露快捷命令会设置精确的算点选项组合。
+// </summary>
 static void OpenHandShortcutCommandsSetExactCombination()
 {
     var vm = new MainWindowViewModel(new FakeRecognizer(), new FakeHandScoringService());
@@ -322,6 +617,9 @@ static void OpenHandShortcutCommandsSetExactCombination()
     Assert(!vm.ScoringContext.IsIppatsu, "副荣 should keep ippatsu cleared.");
 }
 
+// <summary>
+// 验证牌图路径匹配内置资源文件名。
+// </summary>
 static void TileImagePathsFollowAssetNames()
 {
     Assert(T("1m").ImagePath == "avares://MahjongPoints/Images/manzu/m_1.png", "1m should map to manzu image.");
@@ -331,6 +629,9 @@ static void TileImagePathsFollowAssetNames()
     Assert(T("unknown").ImagePath == "avares://MahjongPoints/Images/tupai/z_5.png", "Unknown tile should use blank tile image.");
 }
 
+// <summary>
+// 验证牌图资源文件存在。
+// </summary>
 void TileImageAssetsExist()
 {
     EnsureAvaloniaInitialized();
@@ -339,6 +640,9 @@ void TileImageAssetsExist()
     Assert(AssetLoader.Exists(new Uri(T("7z").ImagePath)), "7z image asset should exist.");
 }
 
+// <summary>
+// 验证牌图绑定可以加载图片源。
+// </summary>
 void TileImageBindingLoadsSource()
 {
     EnsureAvaloniaInitialized();
@@ -354,11 +658,19 @@ DoraAddsFanButNotFu();
 DoraDoesNotCreateYaku();
 await HighestScoringShapeWins();
 FourteenTilesFindDiscardOptionsByReusingTenpaiSearch();
+await OpenKanNormalizesFifteenPhysicalTiles();
+await ConcealedKanPadsTwoVisibleTiles();
 await ViewModelShowsDiscardOptionsForFourteenNonWinningTiles();
 await ViewModelWaitsForDiscardWinningSelection();
 await ViewModelCalculatesSelectedDiscardWinningTile();
 await ViewModelFirstDiscardWinningSelectionUsesCompleteHand();
 await ViewModelKeepsOneSelectedDiscardWinningTile();
+await ViewModelAutoAddsSingleOpenKanCandidate();
+await ViewModelOpenKanRequestsOpenMeldSelection();
+await ViewModelSelectedOpenKanRequestsOpenMeldSelection();
+await ViewModelAutoAddsSingleConcealedKanCandidate();
+await ViewModelRequestsKanSelectionForMultipleCandidates();
+await ViewModelDoesNotDeclareSameOpenKanTileTwice();
 DiscardWinningOptionSelectionChangesBorder();
 DoraCommandsClampAtZero();
 ScoringOptionLabelsOmitQuestionPrefix();
@@ -372,6 +684,11 @@ Console.WriteLine("MahjongPoints core tests passed.");
 
 sealed class FakeSplitter(IReadOnlyList<MahjongHandSplitResult> splits) : IHandSplitter
 {
+    /// <summary>
+    /// 返回预设的假拆牌结果。
+    /// </summary>
+    /// <param name="tiles">调用方传入的手牌。</param>
+    /// <returns>预设拆牌结果。</returns>
     public IReadOnlyList<MahjongHandSplitResult> Split(IReadOnlyList<RecognizedMahjongTile> tiles) => splits;
 }
 
@@ -416,6 +733,12 @@ sealed class FakeScoreCalculator : IScoreCalculator
 
 sealed class FakeRecognizer(IReadOnlyList<RecognizedMahjongTile>? tiles = null) : IHandImageRecognizer
 {
+    /// <summary>
+    /// 返回预设的假识别结果。
+    /// </summary>
+    /// <param name="imagePath">调用方传入的图片路径。</param>
+    /// <param name="cancellationToken">调用方传入的取消令牌。</param>
+    /// <returns>假识别结果。</returns>
     public Task<MahjongHandRecognitionResult> RecognizeAsync(string imagePath, CancellationToken cancellationToken = default) =>
         Task.FromResult(new MahjongHandRecognitionResult(tiles ?? [], "fake", "fake", "fake"));
 }
@@ -429,8 +752,18 @@ sealed class FakeHandScoringService(
 
     public string LastWinningTileCode { get; private set; } = "";
 
+    /// <summary>
+    /// 为 ViewModel 测试返回固定听牌候选。
+    /// </summary>
+    /// <param name="recognizedTiles">调用方传入的识别牌。</param>
+    /// <returns>固定听牌候选列表。</returns>
     public IReadOnlyList<RecognizedMahjongTile> FindTenpaiTiles(IReadOnlyList<RecognizedMahjongTile> recognizedTiles) => [new("4s", "4s", 1)];
 
+    /// <summary>
+    /// 返回预设的弃牌听牌候选。
+    /// </summary>
+    /// <param name="recognizedTiles">调用方传入的识别牌。</param>
+    /// <returns>预设弃牌听牌候选。</returns>
     public IReadOnlyList<TenpaiDiscardOption> FindTenpaiDiscardOptions(IReadOnlyList<RecognizedMahjongTile> recognizedTiles) =>
         discardOptions ?? [];
 

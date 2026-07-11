@@ -92,9 +92,20 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// </summary>
     public ObservableCollection<RecognizedMahjongTile> RecognizedTiles { get; } = [];
 
+    /// <summary>
+    /// 当前 13 张手牌模式下可选择的听牌胡牌张集合。
+    /// </summary>
     public ObservableCollection<RecognizedMahjongTile> TenpaiTiles { get; } = [];
 
+    /// <summary>
+    /// 当前 14 张未和牌手牌可选择的弃牌听牌候选集合。
+    /// </summary>
     public ObservableCollection<TenpaiDiscardOption> TenpaiDiscardOptions { get; } = [];
+
+    /// <summary>
+    /// 用户已经在界面声明的杠集合。
+    /// </summary>
+    public ObservableCollection<DeclaredKanItem> DeclaredKans { get; } = [];
 
     /// <summary>
     /// 用户当前选择的胡牌状态和算点环境。
@@ -105,6 +116,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// 请求界面弹出副露面子选择窗口。
     /// </summary>
     public event EventHandler? OpenMeldSelectionRequested;
+
+    /// <summary>
+    /// 请求界面弹出杠候选选择窗口。
+    /// </summary>
+    public event EventHandler<KanSelectionRequestedEventArgs>? KanSelectionRequested;
 
     /// <summary>
     /// 界面展示的算点选项集合。
@@ -351,48 +367,74 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             or nameof(MahjongScoringContext.DoraCount);
     }
 
+    /// <summary>
+    /// 增加当前宝牌数量。
+    /// </summary>
     [RelayCommand]
     private void IncrementDoraCount()
     {
         ScoringContext.DoraCount++;
     }
 
+    /// <summary>
+    /// 减少当前宝牌数量，最小值限制为零。
+    /// </summary>
     [RelayCommand]
     private void DecrementDoraCount()
     {
         ScoringContext.DoraCount = Math.Max(0, ScoringContext.DoraCount - 1);
     }
 
+    /// <summary>
+    /// 选择立直、一发、自摸的快捷组合。
+    /// </summary>
     [RelayCommand]
     private void SelectRiichiIppatsuTsumo()
     {
         ApplyRiichiShortcut(isIppatsu: true, isTsumo: true);
     }
 
+    /// <summary>
+    /// 选择立直、一发、荣和的快捷组合。
+    /// </summary>
     [RelayCommand]
     private void SelectRiichiIppatsu()
     {
         ApplyRiichiShortcut(isIppatsu: true, isTsumo: false);
     }
 
+    /// <summary>
+    /// 选择立直、自摸且非一发的快捷组合。
+    /// </summary>
     [RelayCommand]
     private void SelectRiichiTsumo()
     {
         ApplyRiichiShortcut(isIppatsu: false, isTsumo: true);
     }
 
+    /// <summary>
+    /// 选择副露自摸的快捷组合。
+    /// </summary>
     [RelayCommand]
     private void SelectOpenTsumo()
     {
         ApplyOpenHandShortcut(isTsumo: true);
     }
 
+    /// <summary>
+    /// 选择副露荣和的快捷组合。
+    /// </summary>
     [RelayCommand]
     private void SelectOpenRon()
     {
         ApplyOpenHandShortcut(isTsumo: false);
     }
 
+    /// <summary>
+    /// 应用立直相关快捷组合，并清除与立直互斥的副露和双立直选项。
+    /// </summary>
+    /// <param name="isIppatsu">是否勾选一发。</param>
+    /// <param name="isTsumo">是否勾选自摸。</param>
     private void ApplyRiichiShortcut(bool isIppatsu, bool isTsumo)
     {
         ScoringContext.IsOpenHand = false;
@@ -402,6 +444,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ScoringContext.IsTsumo = isTsumo;
     }
 
+    /// <summary>
+    /// 应用副露快捷组合，并清除立直、双立直和一发选项。
+    /// </summary>
+    /// <param name="isTsumo">是否勾选自摸。</param>
     private void ApplyOpenHandShortcut(bool isTsumo)
     {
         ScoringContext.IsRiichi = false;
@@ -411,6 +457,139 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ScoringContext.IsTsumo = isTsumo;
     }
 
+    /// <summary>
+    /// 从识别出的对子中声明暗杠。
+    /// </summary>
+    /// <returns>异步操作任务。</returns>
+    [RelayCommand]
+    private Task AddConcealedKanAsync() =>
+        AddKanAsync(DeclaredKanKind.Concealed);
+
+    /// <summary>
+    /// 从识别出的四张同牌中声明明杠。
+    /// </summary>
+    /// <returns>异步操作任务。</returns>
+    [RelayCommand]
+    private Task AddOpenKanAsync() =>
+        AddKanAsync(DeclaredKanKind.Open);
+
+    /// <summary>
+    /// 移除用户已经声明的杠并重新算点。
+    /// </summary>
+    /// <param name="item">要移除的杠声明项。</param>
+    /// <returns>异步操作任务。</returns>
+    [RelayCommand]
+    private async Task RemoveDeclaredKanAsync(DeclaredKanItem? item)
+    {
+        if (item is null)
+        {
+            return;
+        }
+
+        DeclaredKans.Remove(item);
+        SyncDeclaredKansToContext();
+        await RecalculateCurrentHandAsync();
+    }
+
+    /// <summary>
+    /// 应用杠选择弹窗返回的候选牌。
+    /// </summary>
+    /// <param name="kind">要声明的杠类型。</param>
+    /// <param name="tile">用户选择的候选牌；为空时不处理。</param>
+    /// <returns>异步操作任务。</returns>
+    public async Task ApplyKanSelectionAsync(DeclaredKanKind kind, RecognizedMahjongTile? tile)
+    {
+        if (tile is null)
+        {
+            return;
+        }
+
+        await AddDeclaredKanAsync(kind, tile);
+    }
+
+    /// <summary>
+    /// 根据候选数量决定自动声明或请求界面弹窗选择。
+    /// </summary>
+    /// <param name="kind">要添加的杠类型。</param>
+    /// <returns>异步操作任务。</returns>
+    private async Task AddKanAsync(DeclaredKanKind kind)
+    {
+        var candidates = GetKanCandidates(kind);
+        if (candidates.Count == 0)
+        {
+            StatusMessage = kind == DeclaredKanKind.Concealed
+                ? "没有可声明为暗杠的对子。"
+                : "没有可声明为杠子的四张相同牌。";
+            return;
+        }
+
+        if (candidates.Count == 1)
+        {
+            await AddDeclaredKanAsync(kind, candidates[0]);
+            return;
+        }
+
+        KanSelectionRequested?.Invoke(this, new KanSelectionRequestedEventArgs(kind, candidates));
+    }
+
+    /// <summary>
+    /// 添加一组杠；同一张牌只能声明一次杠。
+    /// </summary>
+    /// <param name="kind">要添加的杠类型。</param>
+    /// <param name="tile">要声明为杠的牌。</param>
+    /// <returns>异步操作任务。</returns>
+    private async Task AddDeclaredKanAsync(DeclaredKanKind kind, RecognizedMahjongTile tile)
+    {
+        if (DeclaredKans.Any(item => string.Equals(item.Tile.Code, tile.Code, StringComparison.OrdinalIgnoreCase)))
+        {
+            StatusMessage = "这个杠子已经声明过。";
+            return;
+        }
+
+        DeclaredKans.Add(new DeclaredKanItem(kind, tile));
+        SyncDeclaredKansToContext();
+        if (kind == DeclaredKanKind.Open)
+        {
+            ScoringContext.IsOpenHand = true;
+        }
+
+        StatusMessage = "已添加杠子。";
+        await RecalculateCurrentHandAsync();
+    }
+
+    /// <summary>
+    /// 暗杠候选取两张同牌，明杠候选取四张同牌。
+    /// </summary>
+    /// <param name="kind">要查找的杠类型。</param>
+    /// <returns>可声明为该类型杠的候选牌列表。</returns>
+    private IReadOnlyList<RecognizedMahjongTile> GetKanCandidates(DeclaredKanKind kind)
+    {
+        var requiredCount = kind == DeclaredKanKind.Concealed ? 2 : 4;
+        var declaredCodes = DeclaredKans
+            .Select(item => item.Tile.Code)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return RecognizedTiles
+            .GroupBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase)
+            .Where(group => !declaredCodes.Contains(group.Key))
+            .Where(group => group.Count() == requiredCount)
+            .Select(group => group.First())
+            .OrderBy(tile => tile.Code, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// 将界面声明的杠同步到算点上下文。
+    /// </summary>
+    private void SyncDeclaredKansToContext()
+    {
+        ScoringContext.DeclaredKans = DeclaredKans.Select(item => item.Meld).ToArray();
+    }
+
+    /// <summary>
+    /// 同步用户选择的听牌胡牌张到算点上下文。
+    /// </summary>
+    /// <param name="value">用户选择的听牌胡牌张。</param>
     partial void OnSelectedTenpaiTileChanged(RecognizedMahjongTile? value)
     {
         if (value is not null)
@@ -419,11 +598,20 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// 当打牌胡牌候选变化时刷新候选选中状态。
+    /// </summary>
+    /// <param name="value">当前选中的打牌胡牌候选。</param>
     partial void OnSelectedTenpaiDiscardWinningOptionChanged(TenpaiDiscardWinningOption? value)
     {
         RefreshTenpaiDiscardWinningSelection(value);
     }
 
+    /// <summary>
+    /// 根据用户选择的打牌胡牌候选重新计算当前手牌。
+    /// </summary>
+    /// <param name="option">用户选择的打牌胡牌候选。</param>
+    /// <returns>异步操作任务。</returns>
     [RelayCommand]
     private async Task SelectTenpaiDiscardWinningOptionAsync(TenpaiDiscardWinningOption? option)
     {
@@ -460,6 +648,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// 根据识别出的牌数准备听牌候选或胡牌张选择状态。
+    /// </summary>
+    /// <param name="recognizedTiles">识别出的手牌列表。</param>
     private void PrepareTileSelection(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
     {
         TenpaiTiles.Clear();
@@ -489,6 +681,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         SelectDefaultWinningTile(recognizedTiles);
     }
 
+    /// <summary>
+    /// 为 14 张非和牌手牌准备弃牌听牌候选。
+    /// </summary>
+    /// <param name="recognizedTiles">识别出的 14 张手牌。</param>
     private void PrepareDiscardTenpaiSelection(IReadOnlyList<RecognizedMahjongTile> recognizedTiles)
     {
         TenpaiTiles.Clear();
@@ -506,6 +702,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IsDiscardTenpaiMode = TenpaiDiscardOptions.Any(option => option.WinningOptions.Count > 0);
     }
 
+    /// <summary>
+    /// 设置等待用户选择弃牌胡牌候选时的界面结果文本。
+    /// </summary>
     private void SetDiscardTenpaiWaitingResult()
     {
         ScoreSummary = "请选择可胡牌算点";
@@ -513,6 +712,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         WinningShape = "牌型：未计算";
     }
 
+    /// <summary>
+    /// 刷新所有弃牌胡牌候选的选中状态。
+    /// </summary>
+    /// <param name="selectedOption">当前选中的候选；为空时全部取消选中。</param>
     private void RefreshTenpaiDiscardWinningSelection(TenpaiDiscardWinningOption? selectedOption)
     {
         foreach (var option in TenpaiDiscardOptions.SelectMany(discardOption => discardOption.WinningOptions))
@@ -609,6 +812,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         WinningTileText = $"胡牌张：{winningTile.DisplayName} ({winningTile.Code})";
     }
 
+    /// <summary>
+    /// 使用弃牌后剩余手牌和所选胡牌张组成实际算点用的 14 张牌。
+    /// </summary>
+    /// <param name="option">用户选择的弃牌胡牌候选。</param>
+    /// <returns>用于算点的完整手牌。</returns>
     private static IReadOnlyList<RecognizedMahjongTile> CreateDiscardWinningCalculationTiles(TenpaiDiscardWinningOption option) =>
         option.RemainingTiles.Concat([option.WinningTile]).ToArray();
 
@@ -631,7 +839,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecognizedTiles.Clear();
         TenpaiTiles.Clear();
         TenpaiDiscardOptions.Clear();
+        DeclaredKans.Clear();
         ScoringContext.SelectedOpenMelds = [];
+        ScoringContext.DeclaredKans = [];
         SelectedTenpaiTile = null;
         SelectedTenpaiDiscardWinningOption = null;
         IsTenpaiMode = false;
