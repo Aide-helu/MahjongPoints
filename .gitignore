@@ -47,6 +47,15 @@ CodeCoverage/
 # MSBuild Binary and Structured Log
 *.binlog
 
+# Local leftovers from the desktop repo checkout
+.idea/
+MahjongPoints/
+MahjongPoints.Tests/
+publish/
+release/
+riichi-mahjong-helper/
+tmp_build/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
