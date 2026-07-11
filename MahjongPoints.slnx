@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MahjongPoints.Android/MahjongPoints.Android.csproj" />
+  <Project Path="MahjongPoints.Preview/MahjongPoints.Preview.csproj" />
+</Solution>
