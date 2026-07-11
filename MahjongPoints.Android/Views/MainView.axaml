@@ -1,13 +1,354 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="MahjongPoints.Android.Views.MainView">
-  <Grid RowDefinitions="Auto,*" Margin="20" RowSpacing="16">
-    <TextBlock Text="MahjongPoints"
-               FontSize="24"
-               FontWeight="SemiBold"/>
-    <TextBlock Grid.Row="1"
-               Text="Android port scaffold"
-               VerticalAlignment="Center"
-               HorizontalAlignment="Center"/>
+             xmlns:vm="using:MahjongPoints.ViewModels"
+             x:Class="MahjongPoints.Android.Views.MainView"
+             Background="#F5F6F8">
+  <Design.DataContext>
+    <vm:MainWindowViewModel/>
+  </Design.DataContext>
+
+  <UserControl.Styles>
+    <Style Selector="Border.tile-card">
+      <Setter Property="Width" Value="52"/>
+      <Setter Property="Height" Value="66"/>
+      <Setter Property="Padding" Value="4"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Margin" Value="0,0,6,6"/>
+    </Style>
+    <Style Selector="Image.tile-image">
+      <Setter Property="Stretch" Value="Uniform"/>
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector="ListBoxItem:selected Border.tile-card">
+      <Setter Property="BorderBrush" Value="#2E90FA"/>
+      <Setter Property="BorderThickness" Value="3"/>
+      <Setter Property="CornerRadius" Value="7"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*"
+        Margin="10"
+        RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto"
+          RowSpacing="8">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="8">
+        <StackPanel Spacing="1">
+          <TextBlock Text="MahjongPoints"
+                     FontSize="20"
+                     FontWeight="SemiBold"
+                     Foreground="#1D2939"/>
+          <TextBlock Text="{Binding SelectedFileName}"
+                     FontSize="12"
+                     Foreground="#667085"
+                     TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding StatusMessage}"
+                   Width="150"
+                   FontSize="12"
+                   Foreground="#475467"
+                   TextAlignment="Right"
+                   TextWrapping="Wrap"/>
+      </Grid>
+
+      <StackPanel Grid.Row="1"
+                  Orientation="Horizontal"
+                  Spacing="8">
+        <Button Content="拍照"
+                Width="112"
+                Height="42"
+                FontSize="15"
+                HorizontalContentAlignment="Center"
+                Click="CapturePhotoButton_OnClick"/>
+        <Button Content="相册"
+                Width="112"
+                Height="42"
+                FontSize="15"
+                HorizontalContentAlignment="Center"
+                Click="PickPhotoButton_OnClick"/>
+      </StackPanel>
+
+      <Border Grid.Row="2"
+              Height="116"
+              BorderBrush="#D0D5DD"
+              BorderThickness="1"
+              Background="#ECEFF3"
+              CornerRadius="6"
+              Padding="6">
+        <Image Source="{Binding PreviewImage}"
+               Stretch="Uniform"/>
+      </Border>
+    </Grid>
+
+    <ScrollViewer Grid.Row="1"
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="8">
+        <Border BorderBrush="#D0D5DD"
+                BorderThickness="1"
+                Background="White"
+                CornerRadius="6"
+                Padding="10">
+          <StackPanel Spacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{Binding ScoreSummary}"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#1D2939"
+                         TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding WinningTileText}"
+                         FontSize="13"
+                         Foreground="#027A48"
+                         TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding WinningShape}"
+                         FontSize="13"
+                         Foreground="#475467"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="#D0D5DD"
+                BorderThickness="1"
+                Background="#F9FAFB"
+                CornerRadius="6"
+                Padding="8">
+          <Grid>
+            <StackPanel Spacing="6"
+                        IsVisible="{Binding IsWinningTileMode}">
+              <TextBlock Text="识别出的 14 张胡牌"
+                         FontSize="14"
+                         FontWeight="SemiBold"/>
+              <ListBox ItemsSource="{Binding RecognizedTiles}"
+                       SelectedItem="{Binding ScoringContext.WinningTile, Mode=TwoWay}"
+                       SelectionMode="Single"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       Padding="0">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel/>
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Border Classes="tile-card">
+                      <Image Classes="tile-image"
+                             Source="{Binding TileImage}"/>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+
+            <StackPanel Spacing="6"
+                        IsVisible="{Binding IsTenpaiMode}">
+              <TextBlock Text="叫听牌"
+                         FontSize="14"
+                         FontWeight="SemiBold"/>
+              <ListBox ItemsSource="{Binding TenpaiTiles}"
+                       SelectedItem="{Binding SelectedTenpaiTile, Mode=TwoWay}"
+                       SelectionMode="Single"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       Padding="0">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel/>
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Border Classes="tile-card">
+                      <Image Classes="tile-image"
+                             Source="{Binding TileImage}"/>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+
+            <StackPanel Spacing="8"
+                        IsVisible="{Binding IsDiscardTenpaiMode}">
+              <TextBlock Text="打出后可听"
+                         FontSize="14"
+                         FontWeight="SemiBold"/>
+              <ItemsControl ItemsSource="{Binding TenpaiDiscardOptions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="4"
+                                Margin="0,0,0,8">
+                      <TextBlock Text="{Binding DiscardText}"
+                                 FontSize="13"
+                                 FontWeight="SemiBold"
+                                 TextWrapping="Wrap"/>
+                      <ItemsControl ItemsSource="{Binding WinningOptions}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <WrapPanel/>
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Classes="tile-card"
+                                    BorderBrush="{Binding SelectionBorderBrush}"
+                                    BorderThickness="{Binding SelectionBorderThickness}"
+                                    PointerPressed="TenpaiDiscardWinningOption_OnPointerPressed">
+                              <Image Classes="tile-image"
+                                     Source="{Binding WinningTile.TileImage}"/>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border BorderBrush="#D0D5DD"
+                BorderThickness="1"
+                Background="White"
+                CornerRadius="6"
+                Padding="10">
+          <StackPanel Spacing="8">
+            <TextBlock Text="算点选项"
+                       FontSize="15"
+                       FontWeight="SemiBold"/>
+
+            <WrapPanel>
+              <Button Content="立一自"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding SelectRiichiIppatsuTsumoCommand}"/>
+              <Button Content="立一"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding SelectRiichiIppatsuCommand}"/>
+              <Button Content="立自"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding SelectRiichiTsumoCommand}"/>
+              <Button Content="副自"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding SelectOpenTsumoCommand}"/>
+              <Button Content="副荣"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding SelectOpenRonCommand}"/>
+            </WrapPanel>
+
+            <WrapPanel>
+              <StackPanel Width="112"
+                          Margin="0,0,8,8"
+                          Spacing="3">
+                <TextBlock Text="自风"
+                           FontSize="12"
+                           Foreground="#667085"/>
+                <ComboBox ItemsSource="{Binding WindOptions}"
+                          SelectedItem="{Binding SelectedSelfWindOption, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding DisplayName}"/>
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Width="112"
+                          Margin="0,0,8,8"
+                          Spacing="3">
+                <TextBlock Text="场风"
+                           FontSize="12"
+                           Foreground="#667085"/>
+                <ComboBox ItemsSource="{Binding WindOptions}"
+                          SelectedItem="{Binding SelectedRoundWindOption, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding DisplayName}"/>
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Width="112"
+                          Margin="0,0,8,8"
+                          Spacing="3">
+                <TextBlock Text="宝牌"
+                           FontSize="12"
+                           Foreground="#667085"/>
+                <StackPanel Orientation="Horizontal"
+                            Spacing="4">
+                  <Button Content="-"
+                          Width="32"
+                          Command="{Binding DecrementDoraCountCommand}"/>
+                  <TextBlock Text="{Binding ScoringContext.DoraCount}"
+                             Width="28"
+                             TextAlignment="Center"
+                             VerticalAlignment="Center"/>
+                  <Button Content="+"
+                          Width="32"
+                          Command="{Binding IncrementDoraCountCommand}"/>
+                </StackPanel>
+              </StackPanel>
+            </WrapPanel>
+
+            <WrapPanel>
+              <Button Content="+ 暗杠"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding AddConcealedKanCommand}"/>
+              <Button Content="+ 明杠"
+                      Margin="0,0,6,6"
+                      Padding="10,6"
+                      Command="{Binding AddOpenKanCommand}"/>
+            </WrapPanel>
+
+            <ItemsControl ItemsSource="{Binding DeclaredKans}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <DockPanel LastChildFill="False"
+                             Margin="0,0,0,6">
+                    <TextBlock Text="{Binding DisplayText}"
+                               VerticalAlignment="Center"
+                               DockPanel.Dock="Left"/>
+                    <Button Content="删除"
+                            Padding="8,4"
+                            Margin="8,0,0,0"
+                            DockPanel.Dock="Right"
+                            Click="RemoveDeclaredKan_OnClick"/>
+                  </DockPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding ScoringOptionItems}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <CheckBox MinWidth="92"
+                            Margin="0,0,8,6"
+                            Content="{Binding DisplayName}"
+                            IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                            IsEnabled="{Binding IsEnabled}"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
   </Grid>
 </UserControl>
