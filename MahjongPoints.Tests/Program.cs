@@ -13,6 +13,7 @@ using MahjongPoints.Models;
 using MahjongPoints.Services;
 using MahjongPoints.Services.Scoring;
 using MahjongPoints.ViewModels;
+using MahjongPoints.Views;
 
 // <summary>
 // 创建测试用识别牌，显示名固定等于牌编码。
@@ -503,6 +504,19 @@ async Task ViewModelRequestsKanSelectionForMultipleCandidates()
 }
 
 // <summary>
+// 验证杠候选窗口可以正常初始化命名控件。
+// </summary>
+void KanSelectionWindowInitializesNamedControls()
+{
+    EnsureAvaloniaInitialized();
+
+    var window = new KanSelectionWindow(DeclaredKanKind.Concealed, [T("2m"), T("3p")]);
+
+    Assert(window.FindControl<TextBlock>("MessageText") is not null, "Kan selection message text should be initialized.");
+    Assert(window.FindControl<ListBox>("CandidateList") is not null, "Kan selection candidate list should be initialized.");
+}
+
+// <summary>
 // 验证同一种牌不能重复声明明杠。
 // </summary>
 // <returns>异步测试任务。</returns>
@@ -670,6 +684,7 @@ await ViewModelOpenKanRequestsOpenMeldSelection();
 await ViewModelSelectedOpenKanRequestsOpenMeldSelection();
 await ViewModelAutoAddsSingleConcealedKanCandidate();
 await ViewModelRequestsKanSelectionForMultipleCandidates();
+KanSelectionWindowInitializesNamedControls();
 await ViewModelDoesNotDeclareSameOpenKanTileTwice();
 DiscardWinningOptionSelectionChangesBorder();
 DoraCommandsClampAtZero();

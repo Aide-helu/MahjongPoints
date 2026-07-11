@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -11,12 +12,19 @@ namespace MahjongPoints.Views;
 /// </summary>
 public partial class KanSelectionWindow : Window
 {
+    private readonly TextBlock _messageText;
+    private readonly ListBox _candidateList;
+
     /// <summary>
     /// XAML 设计器使用的默认构造函数。
     /// </summary>
     public KanSelectionWindow()
     {
         AvaloniaXamlLoader.Load(this);
+        _messageText = this.FindControl<TextBlock>("MessageText") ??
+            throw new InvalidOperationException("MessageText control not found.");
+        _candidateList = this.FindControl<ListBox>("CandidateList") ??
+            throw new InvalidOperationException("CandidateList control not found.");
     }
 
     /// <summary>
@@ -27,11 +35,11 @@ public partial class KanSelectionWindow : Window
         IReadOnlyList<RecognizedMahjongTile> candidates)
         : this()
     {
-        MessageText.Text = kind == DeclaredKanKind.Concealed
+        _messageText.Text = kind == DeclaredKanKind.Concealed
             ? "选择哪一组对子作为暗杠。"
             : "选择哪一组四张相同牌作为杠。";
-        CandidateList.ItemsSource = candidates;
-        CandidateList.SelectedIndex = 0;
+        _candidateList.ItemsSource = candidates;
+        _candidateList.SelectedIndex = 0;
     }
 
     /// <summary>
@@ -41,7 +49,7 @@ public partial class KanSelectionWindow : Window
     /// <param name="e">路由事件参数。</param>
     private void ConfirmButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        Close(CandidateList.SelectedItem as RecognizedMahjongTile);
+        Close(_candidateList.SelectedItem as RecognizedMahjongTile);
     }
 
     /// <summary>
