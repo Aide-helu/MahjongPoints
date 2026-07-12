@@ -7,6 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MahjongPoints\MahjongPoints.csproj" />
+    <ProjectReference Include="..\Desktop\MahjongPoints.csproj" />
   </ItemGroup>
 </Project>

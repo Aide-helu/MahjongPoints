@@ -243,7 +243,7 @@ async Task ViewModelShowsDiscardOptionsForFourteenNonWinningTiles()
             new MahjongScoringResult(T("unknown"), false, "No valid hand split.", "No valid hand split.", 0, 0, 0),
             [new TenpaiDiscardOption(T("1z"), [T("9m")], tiles.Where(tile => tile.Code != "1z").ToArray())]));
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
 
     Assert(!vm.IsWinningTileMode, "A 14-tile non-winning hand should not stay in winning-tile selection mode.");
     Assert(
@@ -275,7 +275,7 @@ async Task ViewModelWaitsForDiscardWinningSelection()
             new MahjongScoringResult(T("unknown"), false, "NULL", "NULL", 0, 0, 0),
             [new TenpaiDiscardOption(T("1z"), [T("9m")], tiles.Where(tile => tile.Code != "1z").ToArray())]));
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
 
     Assert(vm.IsDiscardTenpaiMode, "Discard-tenpai mode should be active.");
     Assert(vm.ScoreSummary != "NULL", "Discard-tenpai mode should wait for a winning tile instead of showing the initial failed calculation.");
@@ -310,7 +310,7 @@ async Task ViewModelCalculatesSelectedDiscardWinningTile()
         });
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     var options = DiscardWinningOptions(vm);
     await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[0]);
 
@@ -335,7 +335,7 @@ async Task ViewModelFirstDiscardWinningSelectionUsesCompleteHand()
         "9m", "1z");
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new MahjongHandScoringService());
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     var option = DiscardWinningOptions(vm).First(option => option.DiscardTile.Code == "1z" && option.WinningTile.Code == "9m");
 
     await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(option);
@@ -365,7 +365,7 @@ async Task ViewModelKeepsOneSelectedDiscardWinningTile()
         [discard1z, discard9m]);
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), scoringService);
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     var options = DiscardWinningOptions(vm);
     await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[0]);
     await vm.SelectTenpaiDiscardWinningOptionCommand.ExecuteAsync(options[1]);
@@ -390,7 +390,7 @@ async Task ViewModelAutoAddsSingleOpenKanCandidate()
         "1z", "1z");
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddOpenKanCommand.ExecuteAsync(null);
 
     Assert(vm.DeclaredKans.Count == 1, "A single open-kan candidate should be added automatically.");
@@ -417,7 +417,7 @@ async Task ViewModelOpenKanRequestsOpenMeldSelection()
     var openMeldRequests = 0;
     vm.OpenMeldSelectionRequested += (_, _) => openMeldRequests++;
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddOpenKanCommand.ExecuteAsync(null);
 
     Assert(openMeldRequests == 1, "Declaring an open kan should request normal open-meld selection.");
@@ -443,7 +443,7 @@ async Task ViewModelSelectedOpenKanRequestsOpenMeldSelection()
     vm.KanSelectionRequested += (_, args) => requested = args;
     vm.OpenMeldSelectionRequested += (_, _) => openMeldRequests++;
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddOpenKanCommand.ExecuteAsync(null);
     await vm.ApplyKanSelectionAsync(DeclaredKanKind.Open, requested!.Candidates[0]);
 
@@ -468,7 +468,7 @@ async Task ViewModelAutoAddsSingleConcealedKanCandidate()
         "6m", "7m", "8m");
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddConcealedKanCommand.ExecuteAsync(null);
 
     Assert(vm.DeclaredKans.Count == 1, "A single concealed-kan candidate should be added automatically.");
@@ -495,7 +495,7 @@ async Task ViewModelRequestsKanSelectionForMultipleCandidates()
     KanSelectionRequestedEventArgs? requested = null;
     vm.KanSelectionRequested += (_, args) => requested = args;
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddConcealedKanCommand.ExecuteAsync(null);
 
     Assert(requested is not null, "Multiple concealed-kan candidates should request user selection.");
@@ -532,7 +532,7 @@ async Task ViewModelDoesNotDeclareSameOpenKanTileTwice()
         "1z", "1z");
     var vm = new MainWindowViewModel(new FakeRecognizer(tiles), new FakeHandScoringService());
 
-    await vm.LoadAndRecognizeAsync(@"MahjongPoints\Images\tupai\z_5.png");
+    await vm.LoadAndRecognizeAsync(@"Desktop\Images\tupai\z_5.png");
     await vm.AddOpenKanCommand.ExecuteAsync(null);
     await vm.AddOpenKanCommand.ExecuteAsync(null);
 
