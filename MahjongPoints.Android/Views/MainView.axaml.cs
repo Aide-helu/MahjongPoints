@@ -49,7 +49,17 @@ public partial class MainView : UserControl
             return;
         }
 
-        await viewModel.LoadAndRecognizeAsync(image.ImagePath);
+        try
+        {
+            await viewModel.LoadAndRecognizeAsync(image.ImagePath);
+        }
+        finally
+        {
+            if (image.DeleteAfterLoad && File.Exists(image.ImagePath))
+            {
+                File.Delete(image.ImagePath);
+            }
+        }
     }
 
     private async void TenpaiDiscardWinningOption_OnPointerPressed(object? sender, PointerPressedEventArgs e)

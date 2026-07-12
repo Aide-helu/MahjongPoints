@@ -1,6 +1,6 @@
 namespace MahjongPoints.Android.Services;
 
-public sealed record ImageInputResult(string ImagePath, string SourceName);
+public sealed record ImageInputResult(string ImagePath, string SourceName, bool DeleteAfterLoad = false);
 
 public interface IImageInputService
 {

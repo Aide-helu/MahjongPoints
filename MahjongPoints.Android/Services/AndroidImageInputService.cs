@@ -17,7 +17,7 @@ public sealed class AndroidImageInputService(MainActivity activity) : IImageInpu
         bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream);
         var path = CreateCacheImagePath(activity, "camera");
         File.WriteAllBytes(path, stream.ToArray());
-        return new ImageInputResult(path, "摄像头拍摄");
+        return new ImageInputResult(path, "摄像头拍摄", DeleteAfterLoad: true);
     }
 
     internal static ImageInputResult? FromContentUri(Activity activity, Intent? data)
@@ -38,7 +38,7 @@ public sealed class AndroidImageInputService(MainActivity activity) : IImageInpu
         input.CopyTo(stream);
         var path = CreateCacheImagePath(activity, "album");
         File.WriteAllBytes(path, stream.ToArray());
-        return new ImageInputResult(path, "相册图片");
+        return new ImageInputResult(path, "相册图片", DeleteAfterLoad: true);
     }
 
     internal static Intent CreatePickImageIntent()
